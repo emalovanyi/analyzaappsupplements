@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GymBeam — Supplement Tracker Analysis</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1D9E75;--green-light:#E1F5EE;--green-mid:#9FE1CB;--green-dark:#0F6E56;
+  --purple:#534AB7;--purple-light:#EEEDFE;
+  --amber:#BA7517;--amber-light:#FAEEDA;
+  --text:#1a1a18;--text-muted:#5F5E5A;--text-hint:#888780;
+  --border:rgba(0,0,0,0.08);--bg:#fff;--surface:#F8F7F4;
+  --radius:12px;--radius-sm:8px;
+  --gb:#E84C1E
+}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:14px}
+
+nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.94);backdrop-filter:blur(12px);border-bottom:0.5px solid var(--border);padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:52px}
+.nav-logo{font-size:13px;font-weight:700;color:var(--green);letter-spacing:-.2px}
+.nav-status{display:flex;align-items:center;gap:20px}
+.nav-link{font-size:12px;color:var(--text-hint);text-decoration:none;transition:color .15s}
+.nav-link:hover{color:var(--text)}
+.nav-link.done{color:var(--text-muted)}
+.nav-link.todo{color:var(--text-hint);opacity:.5;pointer-events:none}
+.status-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:5px}
+.dot-done{background:var(--green)}
+.dot-todo{background:#D3D1C7}
+
+.header{padding:64px 40px 52px;border-bottom:0.5px solid var(--border);max-width:900px;margin:0 auto}
+.header-meta{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.header-tag{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--green)}
+.header-dot{width:3px;height:3px;border-radius:50%;background:var(--border)}
+.header-date{font-size:11px;color:var(--text-hint)}
+h1{font-size:clamp(1.9rem,4vw,2.9rem);font-weight:700;letter-spacing:-1.2px;line-height:1.12;color:var(--text);margin-bottom:14px}
+h1 em{font-style:normal;color:var(--green)}
+.header-desc{font-size:15px;color:var(--text-muted);max-width:560px;line-height:1.8;margin-bottom:32px}
+.header-stats{display:flex;gap:36px;flex-wrap:wrap}
+.hstat{display:flex;flex-direction:column;gap:3px}
+.hstat-val{font-size:22px;font-weight:700;color:var(--text);letter-spacing:-0.5px}
+.hstat-lbl{font-size:11px;color:var(--text-hint)}
+.toc{display:flex;gap:8px;flex-wrap:wrap;margin-top:28px;padding-top:28px;border-top:0.5px solid var(--border)}
+.toc-item{display:flex;align-items:center;gap:7px;background:var(--surface);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:500;border:0.5px solid var(--border)}
+.toc-item.done{color:var(--text-muted);border-color:var(--green-mid)}
+.toc-item.todo{color:var(--text-hint);opacity:.5}
+
+.section{padding:52px 40px;max-width:900px;margin:0 auto}
+.section-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:8px}
+.section-title{font-size:1.45rem;font-weight:700;letter-spacing:-0.5px;margin-bottom:6px}
+.section-desc{font-size:14px;color:var(--text-muted);margin-bottom:28px;line-height:1.8;max-width:600px}
+.divider{height:0.5px;background:var(--border);margin:0 40px}
+
+.app-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:36px}
+@media(max-width:640px){.app-grid{grid-template-columns:1fr}}
+.app-card{background:var(--surface);border-radius:var(--radius);padding:18px;border:0.5px solid var(--border);cursor:pointer;transition:border-color .15s,transform .15s}
+.app-card:hover{border-color:var(--green-mid);transform:translateY(-1px)}
+.app-card.active{border-color:var(--green);background:#fff;box-shadow:0 0 0 1px var(--green)}
+.app-card-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.app-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.app-name{font-size:14px;font-weight:700;line-height:1.3}
+.app-type{font-size:11px;color:var(--text-hint);margin-top:2px}
+.app-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500}
+.chip-green{background:var(--green-light);color:var(--green-dark)}
+.chip-gray{background:#F1EFE8;color:#5F5E5A}
+
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:0.5px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
+thead th{background:var(--surface);font-size:10px;font-weight:600;color:var(--text-hint);padding:10px 12px;border-bottom:0.5px solid var(--border);text-align:center;white-space:nowrap;letter-spacing:.04em;text-transform:uppercase}
+thead th:first-child{text-align:left;min-width:190px}
+tbody td{padding:8px 12px;border-bottom:0.5px solid var(--border);text-align:center;vertical-align:middle;color:var(--text-muted)}
+tbody td:first-child{text-align:left;color:var(--text);font-weight:500;font-size:12px}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FAFAF9}
+.gr td{background:var(--surface);font-size:10px;font-weight:700;color:var(--text-hint);text-transform:uppercase;letter-spacing:.08em;padding:7px 12px;border-bottom:0.5px solid var(--border);border-top:0.5px solid var(--border)}
+.t{color:#1D9E75;font-size:15px;font-weight:700}
+.f{color:#E24B4A;font-size:13px;font-weight:500}
+.p{color:#BA7517;font-size:11px;font-weight:700}
+.tleg{display:flex;gap:20px;margin-top:12px;font-size:12px;color:var(--text-muted)}
+.tleg span{display:flex;align-items:center;gap:6px}
+
+.screens-intro{display:flex;align-items:center;gap:14px;background:var(--surface);border-radius:var(--radius);padding:16px 20px;margin-bottom:28px;border:0.5px solid var(--border)}
+.screens-intro-icon{width:40px;height:40px;border-radius:10px;background:#FFF3E0;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.screens-intro-text{font-size:13px;color:var(--text-muted);line-height:1.6}
+.screens-intro-text strong{color:var(--text);font-weight:600}
+.screens-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+@media(max-width:700px){.screens-grid{grid-template-columns:repeat(2,1fr)}}
+.screen-slot{display:flex;flex-direction:column;gap:8px}
+.screen-img{aspect-ratio:9/16;border-radius:14px;border:0.5px solid var(--border);background:var(--surface);overflow:hidden;cursor:pointer}
+.screen-img img{width:100%;height:100%;object-fit:cover;border-radius:14px}
+.lb-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.88);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.lb-overlay.open{display:flex}
+.lb-close{position:absolute;top:16px;right:20px;width:40px;height:40px;border:none;background:rgba(255,255,255,0.1);border-radius:50%;cursor:pointer;color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center}
+.lb-img-wrap{max-height:85vh;max-width:min(420px,90vw)}
+.lb-img-wrap img{max-height:85vh;max-width:100%;border-radius:16px;object-fit:contain}
+.lb-caption{color:rgba(255,255,255,0.7);font-size:13px;font-weight:500}
+.lb-counter{color:rgba(255,255,255,0.4);font-size:11px}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border:none;background:rgba(255,255,255,0.1);border-radius:50%;cursor:pointer;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center}
+.lb-prev{left:16px}.lb-next{right:16px}
+.screen-label{font-size:11px;font-weight:600;color:var(--text-muted);text-align:center}
+
+.impact-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media(max-width:640px){.impact-grid{grid-template-columns:1fr}}
+.impact-card{background:var(--surface);border-radius:var(--radius);padding:22px;border:0.5px solid var(--border);display:flex;gap:16px;transition:border-color .15s}
+.impact-card:hover{border-color:var(--green-mid)}
+.impact-icon-wrap{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.impact-icon-wrap svg{width:18px;height:18px}
+.ic-green{background:var(--green-light);color:var(--green-dark)}
+.ic-purple{background:var(--purple-light);color:var(--purple)}
+.ic-amber{background:var(--amber-light);color:var(--amber)}
+.impact-tag{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;display:inline-block;padding:2px 8px;border-radius:20px}
+.tag-green{background:var(--green-light);color:var(--green-dark)}
+.tag-purple{background:var(--purple-light);color:var(--purple)}
+.tag-amber{background:var(--amber-light);color:var(--amber)}
+.impact-card h3{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.35}
+.impact-card p{font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:12px}
+.impact-card p em{font-style:normal;font-weight:600;color:var(--text)}
+.impact-metric{display:flex;flex-direction:column;gap:2px}
+.metric-val{font-size:20px;font-weight:800;color:var(--green);letter-spacing:-0.5px;line-height:1}
+.metric-lbl{font-size:11px;color:var(--text-hint);line-height:1.4}
+
+.cs-section{padding:52px 40px;max-width:900px;margin:0 auto}
+.cs-intro-stats{display:flex;gap:28px;flex-wrap:wrap;margin-bottom:32px;padding:20px 22px;background:var(--surface);border-radius:var(--radius);border:0.5px solid var(--border)}
+.istat{display:flex;flex-direction:column;gap:3px}
+.istat-val{font-size:26px;font-weight:800;color:var(--green);letter-spacing:-1px;line-height:1}
+.istat-lbl{font-size:11px;color:var(--text-hint)}
+.uc-list{display:flex;flex-direction:column;gap:2px}
+.uc-card{background:var(--surface);border-radius:var(--radius);border:0.5px solid var(--border);overflow:hidden;transition:border-color .15s}
+.uc-card:hover{border-color:var(--green-mid)}
+.uc-head{display:flex;align-items:center;gap:16px;padding:20px 22px;cursor:pointer;user-select:none}
+.uc-num{font-size:11px;font-weight:700;color:var(--text-hint);min-width:20px}
+.uc-icon{font-size:22px;flex-shrink:0}
+.uc-title-wrap{flex:1}
+.uc-title{font-size:14px;font-weight:700;color:var(--text);line-height:1.35}
+.uc-subtitle{font-size:12px;color:var(--text-hint);margin-top:2px}
+.uc-arrow{font-size:12px;color:var(--text-hint);transition:transform .2s;flex-shrink:0}
+.uc-card.open .uc-arrow{transform:rotate(90deg)}
+.uc-body{display:none;padding:0 22px 22px;padding-left:58px}
+.uc-card.open .uc-body{display:block}
+.uc-text{font-size:13px;color:var(--text-muted);line-height:1.8;margin-bottom:14px}
+.uc-text strong{color:var(--text);font-weight:600}
+.uc-text em{font-style:normal;color:var(--green);font-weight:700}
+.uc-quote{background:#fff;border-left:3px solid var(--green-mid);border-radius:0 8px 8px 0;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--text-muted);line-height:1.7;font-style:italic}
+.uc-quote span{display:block;font-style:normal;font-size:11px;color:var(--text-hint);margin-top:6px;font-weight:500}
+
+.coming-section{padding:52px 40px;max-width:900px;margin:0 auto}
+.coming-card{background:var(--surface);border-radius:var(--radius);padding:32px;border:0.5px dashed var(--border);display:flex;align-items:center;gap:20px;opacity:.6}
+.coming-num{font-size:28px;font-weight:800;color:var(--text-hint);letter-spacing:-1px;flex-shrink:0}
+.coming-info h3{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+.coming-info p{font-size:13px;color:var(--text-muted);line-height:1.6}
+.coming-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:#F1EFE8;color:var(--text-hint);margin-bottom:8px}
+
+/* ── MOCKUP ── */
+.mockup-section{padding:52px 40px;max-width:900px;margin:0 auto}
+.phone-wrap{display:flex;justify-content:center;align-items:flex-start;gap:40px;flex-wrap:wrap}
+.phone-frame{width:375px;height:812px;background:#000;border-radius:50px;padding:12px;box-shadow:0 30px 80px rgba(0,0,0,.25),inset 0 0 0 2px #333;flex-shrink:0;position:relative}
+.phone-screen{width:100%;height:100%;background:#fff;border-radius:40px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:34px;background:#000;border-radius:0 0 20px 20px;z-index:10}
+.phone-statusbar{height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 6px;font-size:12px;font-weight:600;color:#000;flex-shrink:0;z-index:5}
+.phone-statusbar .time{font-size:15px;font-weight:700}
+
+/* screens */
+.p-screen{position:absolute;inset:0;background:#fff;border-radius:40px;overflow:hidden;display:none;flex-direction:column}
+.p-screen.active{display:flex}
+.p-scroll{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.p-scroll::-webkit-scrollbar{display:none}
+
+/* shared gb header */
+.gb-hdr{padding:10px 16px 10px;display:flex;align-items:center;justify-content:center;border-bottom:0.5px solid #f0f0f0;flex-shrink:0;position:relative;background:#fff}
+.gb-logo-text{font-size:19px;font-weight:800;letter-spacing:-0.5px}
+.gb-logo-text span{font-style:italic}
+.gb-back{position:absolute;left:14px;font-size:22px;color:#1a1a18;cursor:pointer;line-height:1;padding:2px 6px}
+
+/* tracker tab bar — segmented */
+.t-tabs{padding:10px 14px;border-bottom:1px solid #f0f0f0;flex-shrink:0;background:#fff}
+.t-tabs-inner{display:flex;flex-direction:row;background:#eeece9;border-radius:11px;padding:3px;gap:2px}
+.t-tab{flex:1;text-align:center;padding:7px 2px;font-size:11px;font-weight:600;color:#999;cursor:pointer;border-radius:8px;background:transparent;white-space:nowrap;transition:all .15s}
+.t-tab.active{color:#1a1a18;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.13)}
+
+/* gb bottom nav */
+.gb-nav{height:58px;display:flex;align-items:center;justify-content:space-around;border-top:0.5px solid #f0f0f0;flex-shrink:0;background:#fff;padding-bottom:2px}
+.gn-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 8px;position:relative;min-width:50px}
+.gn-icon{font-size:20px;color:#bbb}
+.gn-label{font-size:9px;color:#bbb;font-weight:500}
+.gn-item.active .gn-icon,.gn-item.active .gn-label{color:var(--gb)}
+.gn-badge{position:absolute;top:1px;right:4px;background:var(--gb);color:#fff;font-size:9px;font-weight:700;width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.gb-av{width:30px;height:30px;background:var(--gb);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700}
+
+/* onboarding */
+.ob-wrap{flex:1;padding:20px 18px 16px;display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:none}
+.ob-wrap::-webkit-scrollbar{display:none}
+.ob-prog{display:flex;gap:4px;margin-bottom:20px}
+.ob-dot{flex:1;height:3px;border-radius:2px;background:#eee}
+.ob-dot.done{background:var(--gb)}
+.ob-dot.cur{background:var(--gb);opacity:.4}
+.ob-title{font-size:19px;font-weight:700;margin-bottom:3px;letter-spacing:-.3px}
+.ob-sub{font-size:13px;color:#888;margin-bottom:20px}
+.ob-field{margin-bottom:14px}
+.ob-lbl{font-size:11px;font-weight:600;color:#999;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:6px}
+.ob-prefill{font-size:10px;background:#E1F5EE;color:#0F6E56;padding:2px 6px;border-radius:4px;font-weight:600;text-transform:none;letter-spacing:0}
+.ob-input{width:100%;background:#f7f6f3;border:1.5px solid #eeece9;border-radius:11px;padding:11px 13px;font-size:14px;color:#1a1a18;font-family:inherit;outline:none}
+.ob-input:focus{border-color:var(--gb)}
+.ob-gender{display:flex;gap:7px}
+.ob-gbtn{flex:1;padding:11px;border-radius:11px;border:1.5px solid #eeece9;background:#f7f6f3;font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s}
+.ob-gbtn.sel{border-color:var(--gb);background:#fff5f2;color:var(--gb)}
+.ob-goals{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.ob-goal{padding:10px 10px;border-radius:11px;border:1.5px solid #eeece9;background:#f7f6f3;font-size:12px;font-weight:500;cursor:pointer;text-align:center;transition:all .15s}
+.ob-goal.sel{border-color:var(--gb);background:#fff5f2;color:var(--gb)}
+.ob-skip{text-align:center;margin-top:8px;font-size:12px;color:#bbb;cursor:pointer;text-decoration:underline}
+.ob-btn{width:100%;padding:14px;background:var(--gb);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:auto;flex-shrink:0}
+.ob-row{display:flex;gap:9px}
+.ob-row .ob-field{flex:1}
+
+/* dashboard */
+.dash-title{font-size:16px;font-weight:700;padding:14px 16px 10px}
+.cal-strip{display:flex;gap:5px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none}
+.cal-strip::-webkit-scrollbar{display:none}
+.cal-day{min-width:42px;height:62px;border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;flex-shrink:0;background:#f7f6f3}
+.cal-day .cdn{font-size:9px;color:#aaa;font-weight:500}
+.cal-day .cdd{font-size:16px;font-weight:700;color:#1a1a18}
+.cal-day.today{background:var(--gb)}
+.cal-day.today .cdn,.cal-day.today .cdd{color:#fff}
+.cal-day .cddot{width:5px;height:5px;border-radius:50%;background:var(--gb)}
+.cal-day.today .cddot{background:#fff}
+.day-label{font-size:12px;font-weight:600;color:#999;padding:0 16px 8px}
+.s-card{margin:0 14px 8px;background:#f7f6f3;border-radius:15px;padding:13px;display:flex;align-items:center;gap:11px;cursor:pointer;border:1.5px solid transparent}
+.s-card:hover{border-color:var(--gb)}
+.s-card.taken{opacity:.5}
+.sc-ico{width:42px;height:42px;border-radius:11px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:1px solid #f0f0f0}
+.sc-name{font-size:13px;font-weight:700;margin-bottom:1px}
+.sc-dose{font-size:11px;color:#888}
+.sc-time{font-size:10px;color:#bbb;margin-top:1px}
+.sc-low{font-size:10px;color:var(--gb);font-weight:600;margin-top:2px}
+.sc-chk{width:27px;height:27px;border-radius:50%;border:2px solid #ddd;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all .15s;margin-left:auto}
+.sc-chk.done{background:var(--gb);border-color:var(--gb);color:#fff;font-size:13px}
+.dash-add{margin:4px 14px 14px;background:#fff;border:1.5px dashed #ddd;border-radius:15px;padding:13px;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;color:#aaa;font-size:13px;font-weight:500}
+
+/* list */
+.l-search{margin:10px 14px;background:#f7f6f3;border-radius:11px;padding:9px 13px;display:flex;align-items:center;gap:7px;border:1.5px solid #eeece9}
+.l-search input{border:none;background:transparent;font-size:13px;font-family:inherit;outline:none;flex:1;color:#1a1a18}
+.l-sec{font-size:10px;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:.06em;padding:0 14px;margin-bottom:7px}
+.l-item{margin:0 14px 7px;background:#f7f6f3;border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;border:1.5px solid transparent}
+.l-item:hover{border-color:var(--gb)}
+.li-ico{width:38px;height:38px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;border:1px solid #f0f0f0;flex-shrink:0}
+.li-name{font-size:13px;font-weight:700}
+.li-dose{font-size:11px;color:#888;margin-top:1px}
+.li-low{font-size:10px;color:var(--gb);font-weight:600}
+.l-add-btn{margin:7px 14px 4px;background:var(--gb);color:#fff;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;width:calc(100% - 28px);display:flex;align-items:center;justify-content:center;gap:7px}
+.l-add-sec{margin:4px 14px 14px;background:#f7f6f3;border:1.5px dashed #ddd;border-radius:13px;padding:11px;font-size:13px;color:#aaa;cursor:pointer;text-align:center;font-weight:500}
+
+/* detail */
+.det-hero{padding:18px 14px 14px;text-align:center}
+.det-ico{width:68px;height:68px;border-radius:18px;background:#f7f6f3;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 10px;border:1px solid #f0f0f0}
+.det-name{font-size:16px;font-weight:700;margin-bottom:2px}
+.det-brand{font-size:11px;color:#aaa}
+.det-low{margin:0 14px 11px;background:#fff5f2;border:1.5px solid #ffd0c0;border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:11px}
+.dlb-txt{flex:1;font-size:12px;color:var(--gb);font-weight:600;line-height:1.4}
+.dlb-btn{background:var(--gb);color:#fff;border:none;border-radius:9px;padding:7px 11px;font-size:12px;font-weight:700;cursor:pointer}
+.det-stats{display:flex;gap:7px;margin:0 14px 12px}
+.dstat{flex:1;background:#f7f6f3;border-radius:11px;padding:9px;text-align:center}
+.dstat-v{font-size:15px;font-weight:800;color:var(--gb)}
+.dstat-l{font-size:10px;color:#aaa;margin-top:2px}
+.det-sec{margin:0 14px 12px}
+.det-sec-t{font-size:10px;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.det-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #f0f0f0;font-size:12px}
+.det-row:last-child{border:none}
+.det-row-k{color:#888}
+.det-row-v{font-weight:600}
+.det-week{display:flex;gap:3px}
+.dwd{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.dwd-l{font-size:9px;color:#aaa}
+.dwd-d{width:22px;height:22px;border-radius:50%;background:#eee;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#aaa}
+.dwd-d.ok{background:var(--gb);color:#fff}
+.dwd-d.skip{background:#ffd0c0;color:var(--gb)}
+.det-acts{display:flex;gap:7px;margin:0 14px 7px}
+.det-btn{flex:1;padding:12px;border-radius:13px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;border:1.5px solid}
+.det-btn.pri{background:var(--gb);color:#fff;border-color:var(--gb)}
+.det-btn.sec{background:#f7f6f3;color:#1a1a18;border-color:#eeece9}
+.det-pdp{margin:0 14px 7px;background:#f7f6f3;border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13px;font-weight:500;color:#1a1a18}
+
+/* report */
+.rep-hdr{padding:14px 14px 0}
+.rep-title{font-size:17px;font-weight:700;margin-bottom:3px}
+.rep-sub{font-size:12px;color:#888;margin-bottom:12px}
+.rep-period{display:flex;gap:5px;margin-bottom:14px}
+.rep-tab{padding:5px 12px;border-radius:18px;font-size:12px;font-weight:600;border:1.5px solid #eeece9;background:#f7f6f3;cursor:pointer;color:#888}
+.rep-tab.active{background:var(--gb);color:#fff;border-color:var(--gb)}
+.rep-streak{margin:0 14px 12px;background:#fff5f2;border-radius:14px;padding:13px;display:flex;align-items:center;gap:12px}
+.rep-card{margin:0 14px 9px;background:#f7f6f3;border-radius:14px;padding:13px}
+.rep-ct{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.rep-ci{width:34px;height:34px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;border:1px solid #f0f0f0}
+.rep-cn{font-size:13px;font-weight:700}
+.rep-cp{font-size:12px;color:#888;margin-left:auto;font-weight:600}
+.rep-bar{background:#e5e5e5;border-radius:5px;height:7px;overflow:hidden}
+.rep-bar-f{height:100%;border-radius:5px;background:var(--gb)}
+.rep-days{display:flex;gap:3px;margin-top:7px}
+.rep-d{flex:1;height:18px;border-radius:4px;background:#e5e5e5;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:#bbb}
+.rep-d.ok{background:var(--gb);color:#fff}
+.rep-d.skip{background:#ffd0c0}
+
+/* add flow */
+.add-body{flex:1;padding:18px 18px 0;overflow-y:auto;scrollbar-width:none}
+.add-body::-webkit-scrollbar{display:none}
+.add-footer{padding:12px 18px 16px;flex-shrink:0}
+.add-title{font-size:17px;font-weight:700;margin-bottom:3px}
+.add-sub{font-size:12px;color:#888;margin-bottom:18px}
+.add-f{margin-bottom:14px}
+.add-lbl{font-size:10px;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.add-sel{width:100%;background:#f7f6f3;border:1.5px solid #eeece9;border-radius:11px;padding:11px 13px;font-size:14px;color:#1a1a18;font-family:inherit;outline:none;appearance:none;cursor:pointer}
+.add-times{display:flex;gap:7px;flex-wrap:wrap}
+.add-tbtn{padding:9px 14px;border-radius:11px;border:1.5px solid #eeece9;background:#f7f6f3;font-size:13px;font-weight:600;cursor:pointer}
+.add-tbtn.sel{border-color:var(--gb);background:#fff5f2;color:var(--gb)}
+.add-toggle{display:flex;align-items:center;gap:11px;background:#f7f6f3;border-radius:11px;padding:13px}
+.add-toggle-t{flex:1;font-size:13px;font-weight:500}
+.add-toggle-s{font-size:11px;color:#aaa;margin-top:1px}
+.tog{width:42px;height:25px;background:#ddd;border-radius:13px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.tog.on{background:var(--gb)}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:19px;height:19px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tog.on::after{transform:translateX(17px)}
+.add-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.add-day{padding:7px 3px;border-radius:9px;border:1.5px solid #eeece9;background:#f7f6f3;font-size:10px;font-weight:600;cursor:pointer;text-align:center}
+.add-day.sel{border-color:var(--gb);background:#fff5f2;color:var(--gb)}
+.add-rec{display:flex;flex-direction:column;gap:5px}
+.add-ri{display:flex;align-items:center;gap:9px;padding:9px 11px;background:#f7f6f3;border-radius:11px;cursor:pointer;border:1.5px solid transparent}
+.add-ri:hover{border-color:var(--gb)}
+.add-ri-plus{color:var(--gb);font-size:17px;font-weight:700}
+
+/* quick buy */
+.qb-sheet{position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:22px 22px 0 0;padding:18px;box-shadow:0 -6px 30px rgba(0,0,0,.13);z-index:20;display:none}
+.qb-sheet.open{display:block}
+.qb-handle{width:34px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 14px}
+.qb-title{font-size:15px;font-weight:700;margin-bottom:3px}
+.qb-sub{font-size:12px;color:#888;margin-bottom:14px}
+.qb-prod{display:flex;align-items:center;gap:11px;background:#f7f6f3;border-radius:13px;padding:11px;margin-bottom:13px}
+.qb-pn{font-size:13px;font-weight:700}
+.qb-pp{font-size:13px;color:var(--gb);font-weight:700;margin-top:2px}
+.qb-qty{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.qb-ql{font-size:13px;font-weight:500}
+.qb-qc{display:flex;align-items:center;gap:13px}
+.qb-qb{width:30px;height:30px;border-radius:50%;background:#f7f6f3;border:none;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700}
+.qb-qv{font-size:15px;font-weight:700}
+.qb-buy{width:100%;background:var(--gb);color:#fff;border:none;border-radius:13px;padding:14px;font-size:15px;font-weight:700;cursor:pointer}
+
+/* nav legend */
+.nav-legend-btn{background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:500;cursor:pointer;transition:border-color .15s;color:var(--text-muted)}
+.nav-legend-btn:hover{border-color:var(--green);color:var(--text)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">GymBeam · Supplement Tracker</div>
+  <div class="nav-status">
+    <a href="#competitor-analysis" class="nav-link done"><span class="status-dot dot-done"></span>Competitor analysis</a>
+    <a href="#business-impact" class="nav-link done"><span class="status-dot dot-done"></span>Business impact</a>
+    <a href="#case-studies" class="nav-link done"><span class="status-dot dot-done"></span>Case studies</a>
+    <a href="#mockup" class="nav-link done"><span class="status-dot dot-done"></span>Mockup</a>
+    <a href="#iterations" class="nav-link todo"><span class="status-dot dot-todo"></span>Ďalšie iterácie</a>
+  </div>
+</nav>
+
+<div class="header">
+  <div class="header-meta"><span class="header-tag">Feature Analysis</span><div class="header-dot"></div><span class="header-date">Q2 2026 · Interná analýza</span></div>
+  <h1>GymBeam<br><em>Supplement Tracker</em></h1>
+  <p class="header-desc">Kompletná analýza supplement tracker feature — od prieskumu konkurencie cez business impact a case studies až po interaktívny mockup návrh.</p>
+  <div class="header-stats">
+    <div class="hstat"><div class="hstat-val">4</div><div class="hstat-lbl">analyzované appky</div></div>
+    <div class="hstat"><div class="hstat-val">35</div><div class="hstat-lbl">hodnotených bodov</div></div>
+    <div class="hstat"><div class="hstat-val">0</div><div class="hstat-lbl">appiek s e-shop integrác.</div></div>
+    <div class="hstat"><div class="hstat-val">5</div><div class="hstat-lbl">sekcie analýzy</div></div>
+  </div>
+  <div class="toc">
+    <div class="toc-item done"><span class="status-dot dot-done"></span>01 · Competitor analysis</div>
+    <div class="toc-item done"><span class="status-dot dot-done"></span>02 · Business impact</div>
+    <div class="toc-item done"><span class="status-dot dot-done"></span>03 · Case studies</div>
+    <div class="toc-item done"><span class="status-dot dot-done"></span>04 · Mockup návrh</div>
+    <div class="toc-item todo"><span class="status-dot dot-todo"></span>05 · Ďalšie iterácie</div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 01 COMPETITOR ANALYSIS -->
+<div id="competitor-analysis" class="section">
+  <div class="section-label">01 · Competitor analysis</div>
+  <h2 class="section-title">Analýza supplement tracker appiek</h2>
+  <p class="section-desc">4 appky dostupné na iOS aj Android — porovnanie onboardingu, pridávania produktov, trackingu dávkovania, notifikácií a analytiky.</p>
+  <div class="app-grid" id="appGrid">
+    <div class="app-card" onclick="selectApp(0)"><div class="app-card-top"><div class="app-icon" style="background:#FFF3E0">💊</div><div><div class="app-name">Medisafe</div><div class="app-type">Medication + supplement tracker</div></div></div><div class="app-meta"><span class="chip chip-green">2012 · 13 rokov</span><span class="chip chip-green">10M+ users</span><span class="chip chip-gray">4.7 iOS · 4.52 Android</span></div></div>
+    <div class="app-card" onclick="selectApp(1)"><div class="app-card-top"><div class="app-icon" style="background:#E8F5E9">🥗</div><div><div class="app-name">MyFitnessPal</div><div class="app-type">Calorie + nutrition tracker</div></div></div><div class="app-meta"><span class="chip chip-green">2005 · 20 rokov</span><span class="chip chip-green">200M+ users</span><span class="chip chip-gray">4.7 iOS · 4.4 Android</span></div></div>
+    <div class="app-card" onclick="selectApp(2)"><div class="app-card-top"><div class="app-icon" style="background:#E3F2FD">📊</div><div><div class="app-name">Cronometer</div><div class="app-type">Micronutrient tracker</div></div></div><div class="app-meta"><span class="chip chip-green">2016 · 9 rokov</span><span class="chip chip-green">10M+ users</span><span class="chip chip-gray">4.8 iOS · 4.5 Android</span></div></div>
+    <div class="app-card" onclick="selectApp(3)"><div class="app-card-top"><div class="app-icon" style="background:#F3E5F5">🌿</div><div><div class="app-name">Lifesum</div><div class="app-type">Nutrition + wellness tracker</div></div></div><div class="app-meta"><span class="chip chip-green">2013 · 12 rokov</span><span class="chip chip-green">65M+ users</span><span class="chip chip-gray">4.6 iOS · 4.4 Android</span></div></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Medisafe</th><th>MyFitnessPal</th><th>Cronometer</th><th>Lifesum</th></tr></thead>
+      <tbody>
+        <tr class="gr"><td colspan="5">Profil appky</td></tr>
+        <tr><td>Na trhu od</td><td>2012</td><td>2005</td><td>2016 (mobil)</td><td>2013</td></tr>
+        <tr><td>Rokov na trhu</td><td>13 rokov</td><td>20 rokov</td><td>9 rokov</td><td>12 rokov</td></tr>
+        <tr><td>Hodnotenie iOS</td><td>4.7 ★</td><td>4.7 ★</td><td>4.8 ★</td><td>4.6 ★</td></tr>
+        <tr><td>Hodnotenie Android</td><td>4.52 ★</td><td>4.4 ★</td><td>4.5 ★</td><td>4.4 ★</td></tr>
+        <tr><td>Používatelia</td><td>10M+</td><td>200M+</td><td>10M+</td><td>65M+</td></tr>
+        <tr><td>Cenový model</td><td>Free → platené 2026</td><td>Free + Premium</td><td>Free + Gold</td><td>Free + Premium</td></tr>
+        <tr class="gr"><td colspan="5">Onboarding</td></tr>
+        <tr><td>Meno / priezvisko</td><td><span class="t">✓</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td></tr>
+        <tr><td>Email + registrácia</td><td><span class="p">~</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td></tr>
+        <tr><td>Dátum narodenia / vek</td><td><span class="t">✓</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td></tr>
+        <tr><td>Pohlavie / gender</td><td><span class="t">✓</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td></tr>
+        <tr><td>Výška</td><td><span class="f">✗</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td></tr>
+        <tr><td>Váha</td><td><span class="f">✗</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td></tr>
+        <tr><td>Fitness / zdravotný cieľ</td><td><span class="f">✗</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td></tr>
+        <tr><td>Lieky / suplementy pri registrácii</td><td><span class="t">✓</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td></tr>
+        <tr><td>Možnosť preskočiť onboarding</td><td><span class="t">✓</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td></tr>
+        <tr><td>Social / Apple / Google login</td><td><span class="f">✗</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td></tr>
+        <tr class="gr"><td colspan="5">Pridanie produktov</td></tr>
+        <tr><td>Vyhľadávanie z databázy</td><td><span class="t">✓</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td></tr>
+        <tr><td>Pridanie z histórie nákupov</td><td><span class="f">✗</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td></tr>
+        <tr><td>Vlastný popis / poznámka</td><td><span class="t">✓</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td></tr>
+        <tr class="gr"><td colspan="5">Trackovanie dávkovania</td></tr>
+        <tr><td>Manuálny denný check-in</td><td><span class="t">✓</span></td><td><span class="p">~</span></td><td><span class="p">~</span></td><td><span class="p">~</span></td></tr>
+        <tr><td>Zaznačenie "preskočil"</td><td><span class="t">✓</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td></tr>
+        <tr><td>Nastavenie množstva dávky</td><td><span class="t">✓</span></td><td><span class="p">~</span></td><td><span class="t">✓</span></td><td><span class="p">~</span></td></tr>
+        <tr><td>Úprava dávky pre konkrétny deň</td><td><span class="t">✓</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td></tr>
+        <tr class="gr"><td colspan="5">Notifikácie</td></tr>
+        <tr><td>Automatický denný reminder</td><td><span class="t">✓</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td><td><span class="p">~</span></td></tr>
+        <tr><td>Akcia priamo z notifikácie (vzal/skip)</td><td><span class="t">✓</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td></tr>
+        <tr><td>Replenishment alert</td><td><span class="p">~</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td></tr>
+        <tr><td>Deep link na nákup z notifikácie</td><td><span class="f">✗</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td></tr>
+        <tr class="gr"><td colspan="5">Analytika</td></tr>
+        <tr><td>Denný prehľad — cieľ vs skutočnosť</td><td><span class="t">✓</span></td><td><span class="f">✗</span></td><td><span class="t">✓</span></td><td><span class="p">~</span></td></tr>
+        <tr><td>Týždenný graf plnenia na produkt</td><td><span class="t">✓</span></td><td><span class="f">✗</span></td><td><span class="t">✓</span></td><td><span class="t">✓</span></td></tr>
+        <tr><td>Mesačný graf plnenia na produkt</td><td><span class="t">✓</span></td><td><span class="f">✗</span></td><td><span class="t">✓</span></td><td><span class="f">✗</span></td></tr>
+        <tr><td>Zostatok balenia + predikcia spotreby</td><td><span class="p">~</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td><td><span class="f">✗</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tleg"><span><span class="t">✓</span> áno</span><span><span class="f">✗</span> nie</span><span><span class="p">~</span> čiastočne</span></div>
+</div>
+
+<div class="divider"></div>
+
+<!-- MEDISAFE DEEP DIVE -->
+<div id="medisafe-screens" class="section">
+  <div class="section-label">01 · Competitor analysis — Medisafe deep dive</div>
+  <h2 class="section-title">Screenshoty z Medisafe appky</h2>
+  <div class="screens-intro"><div class="screens-intro-icon">💊</div><div class="screens-intro-text"><strong>Medisafe · iOS + Android</strong> · 10M+ users · 4.7 ★ · Na trhu od 2012<br>Najbližší UX benchmark — dedikované dávkovanie, skip/taken z notifikácie, refill reminder, mesačný report.</div></div>
+  <div class="screens-grid">
+    <div class="screen-slot"><div class="screen-img"><img src="first.PNG" alt="Supplements detail"></div><div class="screen-label">Supplements detail</div></div>
+    <div class="screen-slot"><div class="screen-img"><img src="second.PNG" alt="Detail suplementu"></div><div class="screen-label">Detail suplementu</div></div>
+    <div class="screen-slot"><div class="screen-img"><img src="third.PNG" alt="Kalendár dávkovania"></div><div class="screen-label">Kalendár dávkovania</div></div>
+    <div class="screen-slot"><div class="screen-img"><img src="fourth.PNG" alt="Prehľad dávky"></div><div class="screen-label">Prehľad dávky</div></div>
+    <div class="screen-slot"><div class="screen-img"><img src="fifth.PNG" alt="Report"></div><div class="screen-label">Report</div></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 02 BUSINESS IMPACT -->
+<div id="business-impact" class="section">
+  <div class="section-label">02 · Business impact</div>
+  <h2 class="section-title">Prečo táto feature dáva biznis zmysel</h2>
+  <p class="section-desc">Supplement tracker nie je len UX feature — je to predajný a retenčný nástroj priamo napojený na kľúčové biznis metriky GymBeam.</p>
+  <div class="impact-grid">
+    <div class="impact-card"><div class="impact-icon-wrap ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><div><div class="impact-tag tag-green">App growth</div><h3>Viac stiahnutí a aktívnych užívateľov appky</h3><p>Supplement tracker je standalone dôvod na inštaláciu appky — nielen pre nákup. Tracker mení appku z nákupného nástroja na každodenný health companion.</p></div></div>
+    <div class="impact-card"><div class="impact-icon-wrap ic-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="impact-tag tag-purple">Revenue</div><h3>Predaj a promovanie produktov v správny moment</h3><p>Tracker vie presne kedy zákazníkovi dochádza proteín alebo vitamíny. Replenishment notifikácia s priamym deep linkom na nákup prichádza v momente najvyššej intent — zákazník <em>chce</em> kúpiť, pretože mu produkt dochádza.</p></div></div>
+    <div class="impact-card"><div class="impact-icon-wrap ic-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><div><div class="impact-tag tag-amber">Diferenciácia</div><h3>Individualita medzi e-commerce hráčmi na trhu</h3><p>Žiadny priamy e-commerce competitor nemá supplement tracker integrovaný v appke s napojením na vlastný eshop. GymBeam má šancu byť first mover v regióne.</p><div class="impact-metric"><span class="metric-val">0</span><span class="metric-lbl">priamych CEE e-commerce kompetitorov s týmto feature</span></div></div></div>
+    <div class="impact-card"><div class="impact-icon-wrap ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><div class="impact-tag tag-green">Retention</div><h3>Napojenie subscription modelu</h3><p>Keď tracker detekuje dochádajúci produkt, prirodzene ponúkne aktiváciu auto-ship subscription so zľavou. Zákazník prekonvertuje z jednorazového kupca na pravidelného odberateľa.</p></div></div>
+    <div class="impact-card"><div class="impact-icon-wrap ic-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div><div><div class="impact-tag tag-purple">Data asset</div><h3>First-party dáta o spotrebe zákazníkov</h3><p>Tracker zbiera najcennejší typ dát — čo zákazník skutočne berie, v akých množstvách, ako konzistentne. Tieto behavioral dáta umožňujú hyper-personalizovaný marketing.</p></div></div>
+    <div class="impact-card"><div class="impact-icon-wrap ic-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg></div><div><div class="impact-tag tag-amber">Platform</div><h3>Základ pre AI tréner a wearables rozšírenie</h3><p>Tracker je datový základ pre budúce iterácie — AI tréner odporúčajúci úpravy stacku a Apple Watch appka.</p><div class="impact-metric"><span class="metric-val">V2 / V3</span><span class="metric-lbl">AI tréner a wearables ako plánované iterácie</span></div></div></div>
+    <div class="impact-card" style="grid-column:1/-1"><div class="impact-icon-wrap ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div><div><div class="impact-tag tag-green">Smart defaults</div><h3>Predvyplnená dávka z popisu produktu — zákazník len potvrdí</h3><p>Každý produkt na GymBeam eshope má v popise uvedený odporúčaný počet dávok denne. Tracker môže túto hodnotu automaticky načítať a navrhnúť ju zákazníkovi ako predvolenú dennú dávku pri pridaní produktu do trackera. Zákazník nemusí nič zadávať manuálne — stačí potvrdiť alebo upraviť podľa vlastných potrieb.</p></div></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 03 CASE STUDIES -->
+<div id="case-studies" class="cs-section">
+  <div class="section-label">03 · Case Studies</div>
+  <h2 class="section-title">Ako ľudia reálne používajú supplement tracker appky</h2>
+  <p class="section-desc">5 konkrétnych use cases — prečo si ľudia tieto appky sťahujú, ako ich denne využívajú a čo z toho plynie pre GymBeam.</p>
+  <div class="cs-intro-stats">
+    <div class="istat"><div class="istat-val">57%</div><div class="istat-lbl">Európanov + Ázijcov<br>aktívne trackuje zdravie digitálne</div></div>
+    <div class="istat"><div class="istat-val">93%</div><div class="istat-lbl">app userov kúpilo suplement<br>na základe odporúčania appky</div></div>
+    <div class="istat"><div class="istat-val">33%</div><div class="istat-lbl">z nich nakupuje<br>mesačne cez appku</div></div>
+    <div class="istat"><div class="istat-val">54%</div><div class="istat-lbl">Európanov používa<br>health/fitness appku</div></div>
+  </div>
+  <div style="background:var(--green-light);border-radius:8px;padding:12px 16px;margin-bottom:28px;font-size:12px;color:var(--green-dark);line-height:1.75">
+    <strong>Zdroj:</strong> Lumina Intelligence, IPA World Congress & Probiota 2025 — prezentácia Ewy Hudson, director of insights. Štúdia pokrývala UK, Taliansko, Francúzsko, Nemecko, Španielsko, USA, Čínu, Japonsko a Južnú Kóreu. Plný článok: <a href="https://www.nutraingredients.com/Article/2025/02/25/health-tracker-apps-are-changing-how-consumers-buy-supplements/" target="_blank" style="color:var(--green-dark);font-weight:600">NutraIngredients.com — feb. 2025</a> · <a href="https://www.nutraingredients.com/Article/2025/04/24/health-and-fitness-tech-is-reshaping-consumer-habits-in-2025/" target="_blank" style="color:var(--green-dark);font-weight:600">NutraIngredients.com — apr. 2025</a>
+  </div>
+  <div class="uc-list">
+    <div class="uc-card open"><div class="uc-head" onclick="toggleUC(this)"><div class="uc-num">01</div><div class="uc-icon">⏰</div><div class="uc-title-wrap"><div class="uc-title">„Zabudnem vziať dávku, potom vôbec neviem, či to funguje"</div><div class="uc-subtitle">Nekonzistencia → reminder + streak</div></div><div class="uc-arrow">›</div></div><div class="uc-body"><div class="uc-text">Zabudnutie je podľa výskumov <strong>najčastejší dôvod prečo ľudia nedodržiavajú denný režim suplementov</strong>. Podľa dát z Medisafe (10M+ používateľov) si <em>94,5 % používateľov</em> nastaví reminder hneď pri onboardingu. (Zdroj: Medisafe onboarding data, citované v štúdii PMC / National Institutes of Health 2023)</div><div class="uc-text">Výskum habit formation (Lally et al., 2010, European Journal of Social Psychology) ukazuje, že <strong>nové návyky sa budujú 18–254 dní</strong> — appka s denným check-inom je najefektívnejší spôsob ako zákazníka týmto oknom previesť.</div></div></div>
+    <div class="uc-card"><div class="uc-head" onclick="toggleUC(this)"><div class="uc-num">02</div><div class="uc-icon">📦</div><div class="uc-title-wrap"><div class="uc-title">„Zistím, že mi dochádza proteín, až keď ho nemám"</div><div class="uc-subtitle">Replenishment moment → nákup v správny čas</div></div><div class="uc-arrow">›</div></div><div class="uc-body"><div class="uc-text">Toto je <strong>najsilnejší biznis use case</strong>. Tracker vie na základe zadanej veľkosti balenia a dennej dávky presne spočítať <em>kedy zákazníkovi dôjde produkt</em>. Replenishment notifikácia „Tvoj proteín dôjde o 5 dní" prichádza v momente najvyššieho purchase intent.</div><div class="uc-text">Lumina Intelligence (IPA World Congress & Probiota 2025) priamo potvrdzuje: <strong>93 % používateľov health appiek si kúpilo suplement na základe odporúčania alebo dát z appky</strong>, pričom 33 % nakupuje mesačne a ďalších 47 % kvartálne. (Zdroj: <a href="https://www.nutraingredients.com/Article/2025/02/25/health-tracker-apps-are-changing-how-consumers-buy-supplements/" target="_blank" style="color:var(--green-dark)">NutraIngredients.com, feb. 2025</a>)</div></div></div>
+    <div class="uc-card"><div class="uc-head" onclick="toggleUC(this)"><div class="uc-num">03</div><div class="uc-icon">🎯</div><div class="uc-title-wrap"><div class="uc-title">„Beriem suplementy, ale neviem či to robím správne"</div><div class="uc-subtitle">Neistota → validácia a edukácia cez appku</div></div><div class="uc-arrow">›</div></div><div class="uc-body"><div class="uc-text">Lumina Intelligence (2025) hovorí, že <strong>spotrebitelia sa stávajú informovanejšími a zámernejšími vo svojich zdravotných rozhodnutiach</strong>. Ľudia chcú vedieť: kreatín pred alebo po tréningu? Vitamín D s jedlom alebo nalačno? (Zdroj: <a href="https://www.nutraingredients.com/Article/2025/04/24/health-and-fitness-tech-is-reshaping-consumer-habits-in-2025/" target="_blank" style="color:var(--green-dark)">NutraIngredients.com, apr. 2025</a>)</div><div class="uc-text">Appky ako SuppCo, Supplements AI alebo SuppTrack odpovedajú na tieto otázky priamo pri produkte — <strong>timing odporúčania, synergistické kombinácie, optimálne dávkovanie</strong>.</div></div></div>
+    <div class="uc-card"><div class="uc-head" onclick="toggleUC(this)"><div class="uc-num">04</div><div class="uc-icon">📈</div><div class="uc-title-wrap"><div class="uc-title">„Chcem vidieť, či mi to naozaj pomáha"</div><div class="uc-subtitle">Progress & výsledky → dlhodobá retencia</div></div><div class="uc-arrow">›</div></div><div class="uc-body"><div class="uc-text">Meta-analýza 138 štúdií (Harkin et al., 2016, Psychological Bulletin) jednoznačne potvrdzuje: <strong>samotný akt zaznamenávania správania zvyšuje pravdepodobnosť dosiahnutia cieľa</strong> — vo všetkých testovaných oblastiach vrátane zdravia a fitness.</div><div class="uc-text">Výskum publikovaný v BMC Health Services Research (2025) ďalej ukazuje, že <strong>appky zobrazujúce historické výsledky zvyšujú konzistentnosť</strong>, pretože používatelia sú motivovaní prekonávať svoje predchádzajúce výkony. (Zdroj: <a href="https://link.springer.com/article/10.1186/s12913-025-12489-z" target="_blank" style="color:var(--green-dark)">Springer / BMC Health Services Research, 2025</a>)</div></div></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 04 MOCKUP -->
+<div id="mockup" class="mockup-section">
+  <div class="section-label">04 · Mockup návrh</div>
+  <h2 class="section-title">Interaktívny prototype — V1</h2>
+  <p class="section-desc">Klikateľný prototype supplement trackera v GymBeam dizajne. Prejdite celý flow — onboarding, dashboard, pridanie suplementu, detail, report.</p>
+
+  <div class="phone-wrap">
+    <!-- PHONE -->
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" id="phoneScreen">
+        <div class="phone-statusbar"><span class="time">12:32</span><div style="display:flex;gap:5px;align-items:center;font-size:11px"><span>●●●</span><span>▲</span><span>■</span></div></div>
+
+        <!-- ① HOME -->
+        <div class="p-screen active" id="s-home">
+          <div class="gb-hdr"><div class="gb-logo-text">Gym<span>Beam</span></div></div>
+          <div class="p-scroll">
+            <div style="padding:10px 14px"><div style="background:#f7f6f3;border-radius:11px;padding:9px 13px;display:flex;align-items:center;gap:7px;border:1.5px solid #eeece9"><span style="color:#bbb;font-size:14px">🔍</span><span style="font-size:13px;color:#bbb">Vyhľadajte produkt</span></div></div>
+            <div style="margin:0 14px;border-radius:15px;background:#1a1a18;overflow:hidden;padding:18px 16px 14px">
+              <div style="font-size:20px;font-weight:900;color:#fff;line-height:1.1;text-transform:uppercase">VÁŠ OUTFIT,<br>VÁŠ PRÍBEH</div>
+              <div style="font-size:11px;font-weight:600;color:#fff;margin-top:5px;opacity:.8">Nová kolekcia na šport aj voľný čas.</div>
+            </div>
+            <div style="padding:14px 14px 6px;font-size:13px;font-weight:700">Objavte produkty podľa vášho cieľa:</div>
+            <div style="display:flex;gap:8px;padding:0 14px;overflow-x:auto;scrollbar-width:none">
+              <div style="min-width:95px;height:84px;border-radius:13px;background:#f7f6f3;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;cursor:pointer"><span style="font-size:22px">💪</span>Naberať svaly</div>
+              <div style="min-width:95px;height:84px;border-radius:13px;background:#f7f6f3;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;cursor:pointer"><span style="font-size:22px">🔥</span>Schudnúť</div>
+              <div style="min-width:95px;height:84px;border-radius:13px;background:#f7f6f3;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;cursor:pointer"><span style="font-size:22px">⚡</span>Viac energie</div>
+            </div>
+            <div style="padding:14px 14px 6px;font-size:13px;font-weight:700">Funkcie</div>
+            <div style="display:flex;gap:7px;padding:0 14px 14px">
+              <div onclick="goScreen('s-ob1')" style="flex:1;background:#fff5f2;border:1.5px solid #ffd0c0;border-radius:13px;padding:13px 10px;cursor:pointer;text-align:center"><div style="font-size:24px;margin-bottom:5px">💊</div><div style="font-size:11px;font-weight:700;color:#E84C1E;line-height:1.3">Supplement<br>Tracker</div></div>
+              <div style="flex:1;background:#f7f6f3;border:1.5px solid #eeece9;border-radius:13px;padding:13px 10px;cursor:pointer;text-align:center"><div style="font-size:24px;margin-bottom:5px">❤️</div><div style="font-size:11px;font-weight:700;color:#aaa;line-height:1.3">Obľúbené<br>produkty</div></div>
+              <div style="flex:1;background:#f7f6f3;border:1.5px solid #eeece9;border-radius:13px;padding:13px 10px;cursor:pointer;text-align:center"><div style="font-size:24px;margin-bottom:5px">📦</div><div style="font-size:11px;font-weight:700;color:#aaa;line-height:1.3">Moje<br>objednávky</div></div>
+            </div>
+            <div style="padding:0 14px 6px;font-size:13px;font-weight:700">Obľúbené produkty</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0 14px 20px">
+              <div style="background:#f7f6f3;border-radius:13px;padding:11px;cursor:pointer"><div style="font-size:30px;text-align:center;margin-bottom:7px">🥛</div><div style="font-size:11px;font-weight:700;line-height:1.3;margin-bottom:3px">Just Whey Grass-Fed — GymBeam</div><div style="font-size:12px;font-weight:700;color:#E84C1E">od 30,95 €</div></div>
+              <div style="background:#f7f6f3;border-radius:13px;padding:11px;cursor:pointer"><div style="font-size:30px;text-align:center;margin-bottom:7px">💊</div><div style="font-size:11px;font-weight:700;line-height:1.3;margin-bottom:3px">True Whey — GymBeam</div><div style="font-size:12px;font-weight:700;color:#E84C1E">od 24,95 €</div></div>
+            </div>
+          </div>
+          <div class="gb-nav">
+            <div class="gn-item active"><div class="gb-av">GB</div></div>
+            <div class="gn-item"><div class="gn-icon">☰</div><div class="gn-label">Kategórie</div></div>
+            <div class="gn-item"><div class="gn-icon">🛒</div><div class="gn-badge">5</div><div class="gn-label">Košík</div></div>
+            <div class="gn-item" onclick="goScreen('s-ob1')"><div class="gn-icon">💊</div><div class="gn-label">Tracker</div></div>
+            <div class="gn-item"><div class="gn-icon">👤</div><div class="gn-label">Profil</div></div>
+          </div>
+        </div>
+
+        <!-- ② ONBOARDING 1 -->
+        <div class="p-screen" id="s-ob1">
+          <div class="gb-hdr"><div class="gb-back" onclick="goScreen('s-home')">‹</div><div class="gb-logo-text">Gym<span>Beam</span></div></div>
+          <div class="ob-wrap">
+            <div class="ob-prog"><div class="ob-dot done"></div><div class="ob-dot cur"></div><div class="ob-dot"></div></div>
+            <div class="ob-title">Supplement Tracker</div>
+            <div class="ob-sub">Nastavte si profil pre presné odporúčania dávkovania.</div>
+            <div class="ob-field"><div class="ob-lbl">Dátum narodenia <span class="ob-prefill">Z profilu</span></div><input class="ob-input" type="text" value="15. 03. 1995"></div>
+            <div class="ob-field"><div class="ob-lbl">Pohlavie <span class="ob-prefill">Z profilu</span></div><div class="ob-gender"><div class="ob-gbtn sel" onclick="selOb(this,'g')">Muž</div><div class="ob-gbtn" onclick="selOb(this,'g')">Žena</div><div class="ob-gbtn" onclick="selOb(this,'g')">Iné</div></div></div>
+            <div class="ob-row"><div class="ob-field"><div class="ob-lbl">Výška (cm)</div><input class="ob-input" type="number" placeholder="180"></div><div class="ob-field"><div class="ob-lbl">Váha (kg)</div><input class="ob-input" type="number" placeholder="80"></div></div>
+            <div class="ob-skip" onclick="goScreen('s-ob2')">Preskočiť →</div>
+            <button class="ob-btn" onclick="goScreen('s-ob2')">Pokračovať</button>
+          </div>
+          <div class="gb-nav">
+            <div class="gn-item" onclick="goScreen('s-home')"><div class="gb-av" style="width:28px;height:28px;font-size:11px">GB</div></div>
+            <div class="gn-item"><div class="gn-icon">☰</div><div class="gn-label">Kategórie</div></div>
+            <div class="gn-item"><div class="gn-icon">🛒</div><div class="gn-badge">5</div><div class="gn-label">Košík</div></div>
+            <div class="gn-item active"><div class="gn-icon" style="color:#E84C1E">💊</div><div class="gn-label" style="color:#E84C1E">Tracker</div></div>
+            <div class="gn-item"><div class="gn-icon">👤</div><div class="gn-label">Profil</div></div>
+          </div>
+        </div>
+
+        <!-- ③ ONBOARDING 2 -->
+        <div class="p-screen" id="s-ob2">
+          <div class="gb-hdr"><div class="gb-back" onclick="goScreen('s-ob1')">‹</div><div class="gb-logo-text">Gym<span>Beam</span></div></div>
+          <div class="ob-wrap">
+            <div class="ob-prog"><div class="ob-dot done"></div><div class="ob-dot done"></div><div class="ob-dot cur"></div></div>
+            <div class="ob-title">Váš fitness cieľ</div>
+            <div class="ob-sub">Pomôže nám nastaviť správne odporúčania.</div>
+            <div class="ob-goals">
+              <div class="ob-goal sel" onclick="this.classList.toggle('sel')">💪 Naberanie svalov</div>
+              <div class="ob-goal" onclick="this.classList.toggle('sel')">🔥 Chudnutie</div>
+              <div class="ob-goal" onclick="this.classList.toggle('sel')">⚡ Výkon & energia</div>
+              <div class="ob-goal" onclick="this.classList.toggle('sel')">🏃 Vytrvalosť</div>
+              <div class="ob-goal" onclick="this.classList.toggle('sel')">🧘 Zdravie & imunita</div>
+              <div class="ob-goal" onclick="this.classList.toggle('sel')">😴 Spánok & recovery</div>
+            </div>
+            <div class="ob-skip" onclick="goScreen('s-dash')">Preskočiť →</div>
+            <button class="ob-btn" onclick="goScreen('s-dash')">Dokončiť nastavenie</button>
+          </div>
+          <div class="gb-nav">
+            <div class="gn-item" onclick="goScreen('s-home')"><div class="gb-av" style="width:28px;height:28px;font-size:11px">GB</div></div>
+            <div class="gn-item"><div class="gn-icon">☰</div><div class="gn-label">Kategórie</div></div>
+            <div class="gn-item"><div class="gn-icon">🛒</div><div class="gn-badge">5</div><div class="gn-label">Košík</div></div>
+            <div class="gn-item active"><div class="gn-icon" style="color:#E84C1E">💊</div><div class="gn-label" style="color:#E84C1E">Tracker</div></div>
+            <div class="gn-item"><div class="gn-icon">👤</div><div class="gn-label">Profil</div></div>
+          </div>
+        </div>
+
+        <!-- ④ DASHBOARD -->
+        <div class="p-screen" id="s-dash">
+          <div class="gb-hdr"><div class="gb-logo-text">Gym<span>Beam</span></div></div>
+          <div class="t-tabs"><div class="t-tabs-inner">
+            <div class="t-tab active" onclick="swTab(this,'s-dash')">Dnes</div>
+            <div class="t-tab" onclick="swTab(this,'s-list')">Suplementy</div>
+            <div class="t-tab" onclick="swTab(this,'s-report')">Report</div>
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Nastavenia</div>
+          </div></div>
+          <div class="p-scroll">
+            <div class="dash-title">Tracker 💊</div>
+            <div class="cal-strip" id="calStrip"></div>
+            <div class="day-label">Dnes · 4 suplementy</div>
+            <div class="s-card" onclick="goScreen('s-detail')"><div class="sc-ico">🥛</div><div style="flex:1"><div class="sc-name">Just Whey Grass-Fed</div><div class="sc-dose">2 dávky · 60g</div><div class="sc-time">🕗 Ráno & po tréningu</div></div><div class="sc-chk done" onclick="event.stopPropagation()">✓</div></div>
+            <div class="s-card" onclick="goScreen('s-detail-low')"><div class="sc-ico">💊</div><div style="flex:1"><div class="sc-name">Vitamín D3 + K2</div><div class="sc-dose">1 kapsula</div><div class="sc-time">🕗 Ráno s jedlom</div><div class="sc-low">⚠ Zostatok na 4 dni</div></div><div class="sc-chk" onclick="event.stopPropagation();this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"> </div></div>
+            <div class="s-card"><div class="sc-ico">🔵</div><div style="flex:1"><div class="sc-name">Creatine Monohydrate</div><div class="sc-dose">1 dávka · 5g</div><div class="sc-time">🕗 Po tréningu</div></div><div class="sc-chk" onclick="this.classList.toggle('done');this.textContent=this.classList.contains('done')?'✓':''"> </div></div>
+            <div class="s-card taken"><div class="sc-ico">🐟</div><div style="flex:1"><div class="sc-name">Omega-3 Fish Oil</div><div class="sc-dose">2 kapsuly</div><div class="sc-time">✓ Vzaté o 8:14</div></div><div class="sc-chk done">✓</div></div>
+            <div class="dash-add" onclick="goScreen('s-add-orders')"><span style="font-size:17px;color:#E84C1E">＋</span> Pridať suplement</div>
+          </div>
+          <div class="gb-nav">
+            <div class="gn-item" onclick="goScreen('s-home')"><div class="gb-av" style="width:28px;height:28px;font-size:11px">GB</div></div>
+            <div class="gn-item"><div class="gn-icon">☰</div><div class="gn-label">Kategórie</div></div>
+            <div class="gn-item"><div class="gn-icon">🛒</div><div class="gn-badge">5</div><div class="gn-label">Košík</div></div>
+            <div class="gn-item active"><div class="gn-icon" style="color:#E84C1E">💊</div><div class="gn-label" style="color:#E84C1E">Tracker</div></div>
+            <div class="gn-item"><div class="gn-icon">👤</div><div class="gn-label">Profil</div></div>
+          </div>
+        </div>
+
+        <!-- ⑤ LIST -->
+        <div class="p-screen" id="s-list">
+          <div class="gb-hdr"><div class="gb-logo-text">Gym<span>Beam</span></div></div>
+          <div class="t-tabs"><div class="t-tabs-inner">
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Dnes</div>
+            <div class="t-tab active" onclick="swTab(this,'s-list')">Suplementy</div>
+            <div class="t-tab" onclick="swTab(this,'s-report')">Report</div>
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Nastavenia</div>
+          </div></div>
+          <div class="p-scroll">
+            <div style="padding:12px 14px 0;font-size:16px;font-weight:700">Moje suplementy</div>
+            <div class="l-search"><span style="color:#bbb">🔍</span><input type="text" placeholder="Hľadať suplement..."></div>
+            <div class="l-sec">Aktívne</div>
+            <div class="l-item" onclick="goScreen('s-detail')"><div class="li-ico">🥛</div><div style="flex:1"><div class="li-name">Just Whey Grass-Fed</div><div class="li-dose">2× denne · zostatok 18 dní</div></div><div style="color:#ccc;font-size:14px">›</div></div>
+            <div class="l-item" onclick="goScreen('s-detail-low')"><div class="li-ico">💊</div><div style="flex:1"><div class="li-name">Vitamín D3 + K2</div><div class="li-dose">1× denne</div><div class="li-low">⚠ Zostatok na 4 dni</div></div><div style="color:#ccc;font-size:14px">›</div></div>
+            <div class="l-item"><div class="li-ico">🔵</div><div style="flex:1"><div class="li-name">Creatine Monohydrate</div><div class="li-dose">1× denne · zostatok 24 dní</div></div><div style="color:#ccc;font-size:14px">›</div></div>
+            <div class="l-item"><div class="li-ico">🐟</div><div style="flex:1"><div class="li-name">Omega-3 Fish Oil</div><div class="li-dose">2× denne · zostatok 12 dní</div></div><div style="color:#ccc;font-size:14px">›</div></div>
+            <div style="height:8px"></div>
+            <button class="l-add-btn" onclick="goScreen('s-add-orders')">＋ Pridať suplement</button>
+            <div class="l-add-sec" onclick="goScreen('s-add-orders')">📦 Pridať z posledných objednávok</div>
+            <div style="height:16px"></div>
+          </div>
+          <div class="gb-nav">
+            <div class="gn-item" onclick="goScreen('s-home')"><div class="gb-av" style="width:28px;height:28px;font-size:11px">GB</div></div>
+            <div class="gn-item"><div class="gn-icon">☰</div><div class="gn-label">Kategórie</div></div>
+            <div class="gn-item"><div class="gn-icon">🛒</div><div class="gn-badge">5</div><div class="gn-label">Košík</div></div>
+            <div class="gn-item active"><div class="gn-icon" style="color:#E84C1E">💊</div><div class="gn-label" style="color:#E84C1E">Tracker</div></div>
+            <div class="gn-item"><div class="gn-icon">👤</div><div class="gn-label">Profil</div></div>
+          </div>
+        </div>
+
+        <!-- ⑥ DETAIL -->
+        <div class="p-screen" id="s-detail">
+          <div class="gb-hdr"><div class="gb-back" onclick="goScreen('s-list')">‹</div><div style="font-size:14px;font-weight:700">Detail suplementu</div></div>
+          <div class="t-tabs"><div class="t-tabs-inner">
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Dnes</div>
+            <div class="t-tab active" onclick="swTab(this,'s-list')">Suplementy</div>
+            <div class="t-tab" onclick="swTab(this,'s-report')">Report</div>
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Nastavenia</div>
+          </div></div>
+          <div class="p-scroll">
+            <div class="det-hero"><div class="det-ico">🥛</div><div class="det-name">Just Whey Grass-Fed Protein</div><div class="det-brand">GymBeam · Cookies & Cream · 2000g</div></div>
+            <div class="det-stats"><div class="dstat"><div class="dstat-v">2×</div><div class="dstat-l">denne</div></div><div class="dstat"><div class="dstat-v">18</div><div class="dstat-l">dní zostatok</div></div><div class="dstat"><div class="dstat-v">87%</div><div class="dstat-l">konzistencia</div></div></div>
+            <div class="det-sec"><div class="det-sec-t">Tento týždeň</div><div class="det-week"><div class="dwd"><div class="dwd-l">Po</div><div class="dwd-d ok">✓</div></div><div class="dwd"><div class="dwd-l">Ut</div><div class="dwd-d ok">✓</div></div><div class="dwd"><div class="dwd-l">St</div><div class="dwd-d skip">–</div></div><div class="dwd"><div class="dwd-l">Št</div><div class="dwd-d ok">✓</div></div><div class="dwd"><div class="dwd-l">Pi</div><div class="dwd-d ok">✓</div></div><div class="dwd"><div class="dwd-l">So</div><div class="dwd-d ok">✓</div></div><div class="dwd"><div class="dwd-l">Ne</div><div class="dwd-d"></div></div></div></div>
+            <div class="det-sec"><div class="det-sec-t">Informácie o dávkovaní</div><div class="det-row"><span class="det-row-k">Dávka</span><span class="det-row-v">30g (1 odmerka)</span></div><div class="det-row"><span class="det-row-k">Odporúčané dávkovanie</span><span class="det-row-v">2× denne</span></div><div class="det-row"><span class="det-row-k">Čas užívania</span><span class="det-row-v">Ráno & po tréningu</span></div><div class="det-row"><span class="det-row-k">Veľkosť balenia</span><span class="det-row-v">2000g (66 dávok)</span></div><div class="det-row"><span class="det-row-k">Pripomienka dochádza</span><span class="det-row-v">5 dní pred koncom ✓</span></div></div>
+            <div class="det-acts"><div class="det-btn sec" onclick="goScreen('s-edit')">✏️ Upraviť</div><div class="det-btn pri" onclick="goScreen('s-list')">Späť na zoznam</div></div>
+            <div class="det-pdp" onclick="goScreen('s-list')"><span style="font-size:17px">🛒</span><span style="flex:1">Zobraziť produkt v eshope</span><span style="color:#ccc">›</span></div>
+            <div class="det-pdp"><span style="font-size:17px">📋</span><span style="flex:1">Nutričné hodnoty & popis</span><span style="color:#ccc">›</span></div>
+            <div style="height:14px"></div>
+          </div>
+          <div class="gb-nav">
+            <div class="gn-item" onclick="goScreen('s-home')"><div class="gb-av" style="width:28px;height:28px;font-size:11px">GB</div></div>
+            <div class="gn-item"><div class="gn-icon">☰</div><div class="gn-label">Kategórie</div></div>
+            <div class="gn-item"><div class="gn-icon">🛒</div><div class="gn-badge">5</div><div class="gn-label">Košík</div></div>
+            <div class="gn-item active"><div class="gn-icon" style="color:#E84C1E">💊</div><div class="gn-label" style="color:#E84C1E">Tracker</div></div>
+            <div class="gn-item"><div class="gn-icon">👤</div><div class="gn-label">Profil</div></div>
+          </div>
+        </div>
+
+        <!-- ⑦ DETAIL LOW -->
+        <div class="p-screen" id="s-detail-low">
+          <div class="gb-hdr"><div class="gb-back" onclick="goScreen('s-list')">‹</div><div style="font-size:14px;font-weight:700">Detail suplementu</div></div>
+          <div class="t-tabs"><div class="t-tabs-inner">
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Dnes</div>
+            <div class="t-tab active" onclick="swTab(this,'s-list')">Suplementy</div>
+            <div class="t-tab" onclick="swTab(this,'s-report')">Report</div>
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Nastavenia</div>
+          </div></div>
+          <div class="p-scroll">
+            <div class="det-hero"><div class="det-ico">💊</div><div class="det-name">Vitamín D3 + K2</div><div class="det-brand">GymBeam · 120 kapsúl</div></div>
+            <div class="det-low"><span style="font-size:18px">⚠️</span><div class="dlb-txt">Zostatok na 4 dni!<br>Objednaj skôr ako dôjde.</div><button class="dlb-btn" onclick="openQB()">Objednať</button></div>
+            <div class="det-stats"><div class="dstat"><div class="dstat-v">1×</div><div class="dstat-l">denne</div></div><div class="dstat"><div class="dstat-v">4</div><div class="dstat-l">dní zostatok</div></div><div class="dstat"><div class="dstat-v">92%</div><div class="dstat-l">konzistencia</div></div></div>
+            <div class="det-sec"><div class="det-sec-t">Tento týždeň</div><div class="det-week"><div class="dwd"><div class="dwd-l">Po</div><div class="dwd-d ok">✓</div></div><div class="dwd"><div class="dwd-l">Ut</div><div class="dwd-d ok">✓</div></div><div class="dwd"><div class="dwd-l">St</div><div class="dwd-d ok">✓</div></div><div class="dwd"><div class="dwd-l">Št</div><div class="dwd-d ok">✓</div></div><div class="dwd"><div class="dwd-l">Pi</div><div class="dwd-d ok">✓</div></div><div class="dwd"><div class="dwd-l">So</div><div class="dwd-d ok">✓</div></div><div class="dwd"><div class="dwd-l">Ne</div><div class="dwd-d"></div></div></div></div>
+            <div class="det-sec"><div class="det-sec-t">Informácie o dávkovaní</div><div class="det-row"><span class="det-row-k">Dávka</span><span class="det-row-v">1 kapsula</span></div><div class="det-row"><span class="det-row-k">Čas užívania</span><span class="det-row-v">Ráno s jedlom</span></div><div class="det-row"><span class="det-row-k">Veľkosť balenia</span><span class="det-row-v">120 kapsúl</span></div></div>
+            <div class="det-acts"><div class="det-btn sec">✏️ Upraviť</div><div class="det-btn pri" onclick="openQB()">🛒 Rýchla objednávka</div></div>
+            <div class="det-pdp"><span style="font-size:17px">📋</span><span style="flex:1">Nutričné hodnoty & popis</span><span style="color:#ccc">›</span></div>
+            <div style="height:14px"></div>
+          </div>
+          <!-- QB sheet -->
+          <div class="qb-sheet" id="qbSheet">
+            <div class="qb-handle"></div>
+            <div class="qb-title">Rýchla objednávka</div>
+            <div class="qb-sub">Rovnaký produkt ako máte nastavený</div>
+            <div class="qb-prod"><span style="font-size:26px">💊</span><div><div class="qb-pn">Vitamín D3 + K2 — GymBeam</div><div class="qb-pp">9,95 € · 120 kapsúl</div></div></div>
+            <div class="qb-qty"><span class="qb-ql">Množstvo</span><div class="qb-qc"><button class="qb-qb" onclick="chQty(-1)">−</button><span class="qb-qv" id="qbQty">1</span><button class="qb-qb" onclick="chQty(1)">+</button></div></div>
+            <button class="qb-buy" onclick="closeQB()">Pridať do košíka</button>
+          </div>
+          <div class="gb-nav">
+            <div class="gn-item" onclick="goScreen('s-home')"><div class="gb-av" style="width:28px;height:28px;font-size:11px">GB</div></div>
+            <div class="gn-item"><div class="gn-icon">☰</div><div class="gn-label">Kategórie</div></div>
+            <div class="gn-item"><div class="gn-icon">🛒</div><div class="gn-badge">5</div><div class="gn-label">Košík</div></div>
+            <div class="gn-item active"><div class="gn-icon" style="color:#E84C1E">💊</div><div class="gn-label" style="color:#E84C1E">Tracker</div></div>
+            <div class="gn-item"><div class="gn-icon">👤</div><div class="gn-label">Profil</div></div>
+          </div>
+        </div>
+
+        <!-- ⑧ ADD ORDERS -->
+        <div class="p-screen" id="s-add-orders">
+          <div class="gb-hdr"><div class="gb-back" onclick="goScreen('s-list')">‹</div><div style="font-size:14px;font-weight:700">Pridať suplement</div></div>
+          <div class="t-tabs"><div class="t-tabs-inner">
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Dnes</div>
+            <div class="t-tab active" onclick="swTab(this,'s-list')">Suplementy</div>
+            <div class="t-tab" onclick="swTab(this,'s-report')">Report</div>
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Nastavenia</div>
+          </div></div>
+          <div class="p-scroll">
+            <div style="padding:12px 14px 0"><div class="l-search"><span style="color:#bbb">🔍</span><input type="text" placeholder="Hľadať produkt..."></div></div>
+            <div class="l-sec" style="margin-top:8px">Z posledných objednávok</div>
+            <div class="add-rec" style="padding:0 14px">
+              <div class="add-ri" onclick="goScreen('s-add1')"><span style="font-size:19px">🥛</span><div style="flex:1"><div style="font-size:13px;font-weight:600">Just Whey Grass-Fed</div><div style="font-size:11px;color:#aaa">Objednané 12.3.2026</div></div><div class="add-ri-plus">＋</div></div>
+              <div class="add-ri" onclick="goScreen('s-add1')"><span style="font-size:19px">🔵</span><div style="flex:1"><div style="font-size:13px;font-weight:600">Creatine Monohydrate</div><div style="font-size:11px;color:#aaa">Objednané 12.3.2026</div></div><div class="add-ri-plus">＋</div></div>
+              <div class="add-ri" onclick="goScreen('s-add1')"><span style="font-size:19px">🐟</span><div style="flex:1"><div style="font-size:13px;font-weight:600">Omega-3 Fish Oil</div><div style="font-size:11px;color:#aaa">Objednané 28.2.2026</div></div><div class="add-ri-plus">＋</div></div>
+              <div class="add-ri" onclick="goScreen('s-add1')"><span style="font-size:19px">💊</span><div style="flex:1"><div style="font-size:13px;font-weight:600">Multivitamín Sport</div><div style="font-size:11px;color:#aaa">Objednané 1.2.2026</div></div><div class="add-ri-plus">＋</div></div>
+            </div>
+            <div style="height:20px"></div>
+          </div>
+          <div class="gb-nav">
+            <div class="gn-item" onclick="goScreen('s-home')"><div class="gb-av" style="width:28px;height:28px;font-size:11px">GB</div></div>
+            <div class="gn-item"><div class="gn-icon">☰</div><div class="gn-label">Kategórie</div></div>
+            <div class="gn-item"><div class="gn-icon">🛒</div><div class="gn-badge">5</div><div class="gn-label">Košík</div></div>
+            <div class="gn-item active"><div class="gn-icon" style="color:#E84C1E">💊</div><div class="gn-label" style="color:#E84C1E">Tracker</div></div>
+            <div class="gn-item"><div class="gn-icon">👤</div><div class="gn-label">Profil</div></div>
+          </div>
+        </div>
+
+        <!-- ⑨ ADD STEP 1 -->
+        <div class="p-screen" id="s-add1">
+          <div class="gb-hdr"><div class="gb-back" onclick="goScreen('s-add-orders')">‹</div><div style="font-size:14px;font-weight:700">Nastaviť suplement</div></div>
+          <div class="t-tabs"><div class="t-tabs-inner">
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Dnes</div>
+            <div class="t-tab active" onclick="swTab(this,'s-list')">Suplementy</div>
+            <div class="t-tab" onclick="swTab(this,'s-report')">Report</div>
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Nastavenia</div>
+          </div></div>
+          <div class="add-body">
+            <div class="ob-prog" style="margin-bottom:18px"><div class="ob-dot done"></div><div class="ob-dot cur"></div><div class="ob-dot"></div></div>
+            <div class="add-title">Dávkovanie</div>
+            <div class="add-sub">Just Whey Grass-Fed Protein</div>
+            <div class="add-f"><div class="add-lbl">Odporúčaná dávka <span class="ob-prefill">Z produktu</span></div><input class="ob-input" value="30g (1 odmerka)" style="margin-top:7px"></div>
+            <div class="add-f"><div class="add-lbl">Koľkokrát denne</div><div class="add-times" style="margin-top:7px"><div class="add-tbtn" onclick="selT(this)">1×</div><div class="add-tbtn sel" onclick="selT(this)">2×</div><div class="add-tbtn" onclick="selT(this)">3×</div><div class="add-tbtn" onclick="selT(this)">Vlastné</div></div></div>
+            <div class="add-f"><div class="add-lbl">Čas užívania</div><div class="add-times" style="margin-top:7px"><div class="add-tbtn sel" onclick="selT(this)">🌅 Ráno</div><div class="add-tbtn" onclick="selT(this)">☀️ Obed</div><div class="add-tbtn sel" onclick="selT(this)">💪 Po tréningu</div><div class="add-tbtn" onclick="selT(this)">🌙 Večer</div></div></div>
+            <div class="add-f"><div class="add-lbl">Dni v týždni</div><div class="add-days" style="margin-top:7px"><div class="add-day sel" onclick="this.classList.toggle('sel')">Po</div><div class="add-day sel" onclick="this.classList.toggle('sel')">Ut</div><div class="add-day sel" onclick="this.classList.toggle('sel')">St</div><div class="add-day sel" onclick="this.classList.toggle('sel')">Št</div><div class="add-day sel" onclick="this.classList.toggle('sel')">Pi</div><div class="add-day sel" onclick="this.classList.toggle('sel')">So</div><div class="add-day sel" onclick="this.classList.toggle('sel')">Ne</div></div></div>
+          </div>
+          <div class="add-footer"><button class="ob-btn" onclick="goScreen('s-add2')">Pokračovať</button></div>
+          <div class="gb-nav">
+            <div class="gn-item" onclick="goScreen('s-home')"><div class="gb-av" style="width:28px;height:28px;font-size:11px">GB</div></div>
+            <div class="gn-item"><div class="gn-icon">☰</div><div class="gn-label">Kategórie</div></div>
+            <div class="gn-item"><div class="gn-icon">🛒</div><div class="gn-badge">5</div><div class="gn-label">Košík</div></div>
+            <div class="gn-item active"><div class="gn-icon" style="color:#E84C1E">💊</div><div class="gn-label" style="color:#E84C1E">Tracker</div></div>
+            <div class="gn-item"><div class="gn-icon">👤</div><div class="gn-label">Profil</div></div>
+          </div>
+        </div>
+
+        <!-- ⑩ ADD STEP 2 -->
+        <div class="p-screen" id="s-add2">
+          <div class="gb-hdr"><div class="gb-back" onclick="goScreen('s-add1')">‹</div><div style="font-size:14px;font-weight:700">Nastaviť suplement</div></div>
+          <div class="t-tabs"><div class="t-tabs-inner">
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Dnes</div>
+            <div class="t-tab active" onclick="swTab(this,'s-list')">Suplementy</div>
+            <div class="t-tab" onclick="swTab(this,'s-report')">Report</div>
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Nastavenia</div>
+          </div></div>
+          <div class="add-body">
+            <div class="ob-prog" style="margin-bottom:18px"><div class="ob-dot done"></div><div class="ob-dot done"></div><div class="ob-dot cur"></div></div>
+            <div class="add-title">Balenie & pripomienka</div>
+            <div class="add-sub">Just Whey Grass-Fed Protein</div>
+            <div class="add-f"><div class="add-lbl">Veľkosť balenia <span class="ob-prefill">Z produktu</span></div><select class="add-sel" style="margin-top:7px"><option>2000g (66 dávok)</option><option>1000g (33 dávok)</option><option>Vlastné</option></select></div>
+            <div class="add-f"><div class="add-lbl">Predpokladaná spotreba</div><div style="background:#f7f6f3;border-radius:11px;padding:11px 13px;margin-top:7px;font-size:13px;color:#888">Pri 2 dávkach denne: <strong style="color:#E84C1E">33 dní</strong> výdrž balenia</div></div>
+            <div class="add-f"><div class="add-lbl">Pripomienka dochádza</div><div class="add-toggle" style="margin-top:7px"><div><div class="add-toggle-t">Upozorniť keď zostáva 5 dní</div><div class="add-toggle-s">Push notifikácia + možnosť objednať</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div></div>
+          </div>
+          <div class="add-footer"><button class="ob-btn" onclick="goScreen('s-dash')">Uložiť suplement ✓</button></div>
+          <div class="gb-nav">
+            <div class="gn-item" onclick="goScreen('s-home')"><div class="gb-av" style="width:28px;height:28px;font-size:11px">GB</div></div>
+            <div class="gn-item"><div class="gn-icon">☰</div><div class="gn-label">Kategórie</div></div>
+            <div class="gn-item"><div class="gn-icon">🛒</div><div class="gn-badge">5</div><div class="gn-label">Košík</div></div>
+            <div class="gn-item active"><div class="gn-icon" style="color:#E84C1E">💊</div><div class="gn-label" style="color:#E84C1E">Tracker</div></div>
+            <div class="gn-item"><div class="gn-icon">👤</div><div class="gn-label">Profil</div></div>
+          </div>
+        </div>
+
+        <!-- ⑪ REPORT -->
+        <div class="p-screen" id="s-report">
+          <div class="gb-hdr"><div class="gb-logo-text">Gym<span>Beam</span></div></div>
+          <div class="t-tabs"><div class="t-tabs-inner">
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Dnes</div>
+            <div class="t-tab" onclick="swTab(this,'s-list')">Suplementy</div>
+            <div class="t-tab active" onclick="swTab(this,'s-report')">Report</div>
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Nastavenia</div>
+          </div></div>
+          <div class="p-scroll">
+            <div class="rep-hdr"><div class="rep-title">Report 📊</div><div class="rep-sub">Prehľad vašej konzistencie</div><div class="rep-period"><div class="rep-tab active">Týždeň</div><div class="rep-tab" onclick="swRepT(this)">Mesiac</div><div class="rep-tab" onclick="swRepT(this)">Celkovo</div></div></div>
+            <div class="rep-streak"><span style="font-size:26px">🔥</span><div><div style="font-size:22px;font-weight:800;color:#E84C1E">14 dní</div><div style="font-size:11px;color:#aaa">Aktuálny streak</div></div><div style="margin-left:auto;text-align:right"><div style="font-size:13px;font-weight:700">87%</div><div style="font-size:11px;color:#aaa">tento týždeň</div></div></div>
+            <div class="rep-card"><div class="rep-ct"><div class="rep-ci">🥛</div><div class="rep-cn">Just Whey Grass-Fed</div><div class="rep-cp">86%</div></div><div class="rep-bar"><div class="rep-bar-f" style="width:86%"></div></div><div class="rep-days"><div class="rep-d ok">Po</div><div class="rep-d ok">Ut</div><div class="rep-d skip">St</div><div class="rep-d ok">Št</div><div class="rep-d ok">Pi</div><div class="rep-d ok">So</div><div class="rep-d">Ne</div></div></div>
+            <div class="rep-card"><div class="rep-ct"><div class="rep-ci">💊</div><div class="rep-cn">Vitamín D3 + K2</div><div class="rep-cp">100%</div></div><div class="rep-bar"><div class="rep-bar-f" style="width:100%"></div></div><div class="rep-days"><div class="rep-d ok">Po</div><div class="rep-d ok">Ut</div><div class="rep-d ok">St</div><div class="rep-d ok">Št</div><div class="rep-d ok">Pi</div><div class="rep-d ok">So</div><div class="rep-d">Ne</div></div></div>
+            <div class="rep-card"><div class="rep-ct"><div class="rep-ci">🔵</div><div class="rep-cn">Creatine Monohydrate</div><div class="rep-cp">71%</div></div><div class="rep-bar"><div class="rep-bar-f" style="width:71%"></div></div><div class="rep-days"><div class="rep-d ok">Po</div><div class="rep-d skip">Ut</div><div class="rep-d ok">St</div><div class="rep-d ok">Št</div><div class="rep-d skip">Pi</div><div class="rep-d ok">So</div><div class="rep-d">Ne</div></div></div>
+            <div class="rep-card"><div class="rep-ct"><div class="rep-ci">🐟</div><div class="rep-cn">Omega-3 Fish Oil</div><div class="rep-cp">100%</div></div><div class="rep-bar"><div class="rep-bar-f" style="width:100%"></div></div><div class="rep-days"><div class="rep-d ok">Po</div><div class="rep-d ok">Ut</div><div class="rep-d ok">St</div><div class="rep-d ok">Št</div><div class="rep-d ok">Pi</div><div class="rep-d ok">So</div><div class="rep-d">Ne</div></div></div>
+            <div style="height:16px"></div>
+          </div>
+          <div class="gb-nav">
+            <div class="gn-item" onclick="goScreen('s-home')"><div class="gb-av" style="width:28px;height:28px;font-size:11px">GB</div></div>
+            <div class="gn-item"><div class="gn-icon">☰</div><div class="gn-label">Kategórie</div></div>
+            <div class="gn-item"><div class="gn-icon">🛒</div><div class="gn-badge">5</div><div class="gn-label">Košík</div></div>
+            <div class="gn-item active"><div class="gn-icon" style="color:#E84C1E">💊</div><div class="gn-label" style="color:#E84C1E">Tracker</div></div>
+            <div class="gn-item"><div class="gn-icon">👤</div><div class="gn-label">Profil</div></div>
+          </div>
+        </div>
+
+        <!-- ⑫ EDIT -->
+        <div class="p-screen" id="s-edit">
+          <div class="gb-hdr"><div class="gb-back" onclick="goScreen('s-detail')">‹</div><div style="font-size:14px;font-weight:700">Upraviť suplement</div></div>
+          <div class="t-tabs"><div class="t-tabs-inner">
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Dnes</div>
+            <div class="t-tab active" onclick="swTab(this,'s-list')">Suplementy</div>
+            <div class="t-tab" onclick="swTab(this,'s-report')">Report</div>
+            <div class="t-tab" onclick="swTab(this,'s-dash')">Nastavenia</div>
+          </div></div>
+          <div class="add-body">
+            <div style="font-size:16px;font-weight:700;margin-bottom:16px">Just Whey Grass-Fed Protein</div>
+            <div class="add-f"><div class="add-lbl">Dávka</div><input class="ob-input" value="30g (1 odmerka)" style="margin-top:7px"></div>
+            <div class="add-f"><div class="add-lbl">Počet dávok denne</div><div class="add-times" style="margin-top:7px"><div class="add-tbtn" onclick="selT(this)">1×</div><div class="add-tbtn sel" onclick="selT(this)">2×</div><div class="add-tbtn" onclick="selT(this)">3×</div></div></div>
+            <div class="add-f"><div class="add-lbl">Zostatok balenia (dávky)</div><input class="ob-input" value="36" type="number" style="margin-top:7px"></div>
+            <div class="add-f"><div class="add-lbl">Pripomienka dochádza</div><div class="add-toggle" style="margin-top:7px"><div><div class="add-toggle-t">Upozorniť 5 dní pred koncom</div></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div></div>
+          </div>
+          <div class="add-footer"><button class="ob-btn" onclick="goScreen('s-detail')">Uložiť zmeny</button></div>
+          <div class="gb-nav">
+            <div class="gn-item" onclick="goScreen('s-home')"><div class="gb-av" style="width:28px;height:28px;font-size:11px">GB</div></div>
+            <div class="gn-item"><div class="gn-icon">☰</div><div class="gn-label">Kategórie</div></div>
+            <div class="gn-item"><div class="gn-icon">🛒</div><div class="gn-badge">5</div><div class="gn-label">Košík</div></div>
+            <div class="gn-item active"><div class="gn-icon" style="color:#E84C1E">💊</div><div class="gn-label" style="color:#E84C1E">Tracker</div></div>
+            <div class="gn-item"><div class="gn-icon">👤</div><div class="gn-label">Profil</div></div>
+          </div>
+        </div>
+
+      </div><!-- phone-screen -->
+    </div><!-- phone-frame -->
+
+    <!-- NAV LEGEND -->
+    <div style="max-width:200px;padding-top:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--text-hint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Navigácia</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div class="nav-legend-btn" onclick="goScreen('s-home')">① GymBeam HP</div>
+        <div class="nav-legend-btn" onclick="goScreen('s-ob1')">② Onboarding</div>
+        <div class="nav-legend-btn" onclick="goScreen('s-dash')">③ Dashboard</div>
+        <div class="nav-legend-btn" onclick="goScreen('s-list')">④ Zoznam</div>
+        <div class="nav-legend-btn" onclick="goScreen('s-detail')">⑤ Detail suplementu</div>
+        <div class="nav-legend-btn" onclick="goScreen('s-detail-low')">⑥ Detail – dochádza ⚠</div>
+        <div class="nav-legend-btn" onclick="goScreen('s-add-orders')">⑦ Pridať z objednávok</div>
+        <div class="nav-legend-btn" onclick="goScreen('s-add1')">⑧ Nastaviť – dávkovanie</div>
+        <div class="nav-legend-btn" onclick="goScreen('s-add2')">⑨ Nastaviť – balenie</div>
+        <div class="nav-legend-btn" onclick="goScreen('s-report')">⑩ Report</div>
+        <div class="nav-legend-btn" onclick="goScreen('s-edit')">⑪ Upraviť suplement</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 05 ITERATIONS -->
+<div id="iterations" class="section">
+  <div class="section-label">05 · Ďalšie iterácie</div>
+  <h2 class="section-title">Roadmap — čo príde po V1</h2>
+  <p class="section-desc">Každá iterácia stavia na dátach a návykoch vytvorených predchádzajúcou. V1 tracker je základ — nie koniec.</p>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+
+    <!-- V2 AI TRAINER -->
+    <div style="background:var(--surface);border-radius:var(--radius);border:0.5px solid var(--border);overflow:hidden">
+      <div style="display:flex;align-items:center;gap:16px;padding:20px 22px;background:#fff">
+        <div style="width:44px;height:44px;border-radius:12px;background:var(--purple-light);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🤖</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <div style="font-size:14px;font-weight:700">V2 · AI Tréner</div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:20px;background:var(--purple-light);color:var(--purple)">Plánované</div>
+          </div>
+          <div style="font-size:12px;color:var(--text-hint)">Personalizované odporúčania na základe tracking dát</div>
+        </div>
+      </div>
+      <div style="padding:0 22px 20px;padding-left:82px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.8">
+          AI tréner využíva dáta z V1 trackera — čo zákazník berie, kedy, ako konzistentne a aký má fitness cieľ — a na základe toho <strong style="color:var(--text)">aktívne navrhuje úpravy supplement stacku</strong>. Nie generické rady, ale konkrétne: „Na základe tvojho tréningového cieľa (naberanie svalov) a súčasného stacku odporúčame pridať kreatín — zvyšuje výkon o 5–15 % pri silovom tréningu."
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:#fff;border:0.5px solid var(--border);border-radius:10px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:4px">💬 Smart odporúčania</div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.6">„Chýba ti vitamín D — dopĺňaj ho s K2 pre lepšie vstrebávanie."</div>
+          </div>
+          <div style="background:#fff;border:0.5px solid var(--border);border-radius:10px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:4px">📊 Stack analýza</div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.6">Detekuje prekryvy živín, zbytočné kombinácie a optimalizuje timing.</div>
+          </div>
+          <div style="background:#fff;border:0.5px solid var(--border);border-radius:10px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:4px">🎯 Goal tracking</div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.6">Sleduje progress smerom k fitness cieľu a upravuje odporúčania podľa výsledkov.</div>
+          </div>
+          <div style="background:#fff;border:0.5px solid var(--border);border-radius:10px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:4px">🛒 Direct upsell</div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.6">Každé odporúčanie je priamo prepojené na produkt v GymBeam eshope.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- V3 APPLE WATCH -->
+    <div style="background:var(--surface);border-radius:var(--radius);border:0.5px solid var(--border);overflow:hidden">
+      <div style="display:flex;align-items:center;gap:16px;padding:20px 22px;background:#fff">
+        <div style="width:44px;height:44px;border-radius:12px;background:var(--amber-light);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">⌚</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <div style="font-size:14px;font-weight:700">V3 · Apple Watch & wearables</div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:20px;background:var(--amber-light);color:var(--amber)">Plánované</div>
+          </div>
+          <div style="font-size:12px;color:var(--text-hint)">Check-in priamo zo zápästia — bez telefónu</div>
+        </div>
+      </div>
+      <div style="padding:0 22px 20px;padding-left:82px">
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.8;margin-bottom:14px">
+          Zákazník nemusí vyťahovať telefón. Keď vezme rannú dávku proteínu, <strong style="color:var(--text)">jedným tapom na Apple Watch zaloguje dávku</strong> priamo z zápästia. Notifikácia s menom suplementu a časom príde na hodinky — stačí swipnúť alebo tapnúť „Vzal som".
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <!-- Watch mockup -->
+          <div style="flex-shrink:0">
+            <div style="width:100px;height:120px;background:#1a1a18;border-radius:28px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 20px rgba(0,0,0,.25)">
+              <div style="font-size:10px;color:rgba(255,255,255,.5);font-weight:500">9:14</div>
+              <div style="font-size:18px">🥛</div>
+              <div style="font-size:9px;color:#fff;font-weight:700;text-align:center;line-height:1.3">Just Whey<br>Grass-Fed</div>
+              <div style="display:flex;gap:4px">
+                <div style="background:#E84C1E;border-radius:8px;padding:4px 7px;font-size:8px;color:#fff;font-weight:700;cursor:pointer">✓ Vzal</div>
+                <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:4px 7px;font-size:8px;color:#fff;font-weight:700;cursor:pointer">Skip</div>
+              </div>
+            </div>
+            <div style="font-size:10px;color:var(--text-hint);text-align:center;margin-top:6px">Watch notifikácia</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;flex:1">
+            <div style="background:#fff;border:0.5px solid var(--border);border-radius:10px;padding:11px 13px">
+              <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:3px">⌚ Bez telefónu</div>
+              <div style="font-size:12px;color:var(--text-muted);line-height:1.6">Celý check-in na zápästí — vzal / skip priamo z notifikácie na hodinkách.</div>
+            </div>
+            <div style="background:#fff;border:0.5px solid var(--border);border-radius:10px;padding:11px 13px">
+              <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:3px">🔄 Sync s appkou</div>
+              <div style="font-size:12px;color:var(--text-muted);line-height:1.6">Všetky dáta sa automaticky synchronizujú s iPhone appkou a reportom.</div>
+            </div>
+            <div style="background:#fff;border:0.5px solid var(--border);border-radius:10px;padding:11px 13px">
+              <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:3px">🏃 Gym mode</div>
+              <div style="font-size:12px;color:var(--text-muted);line-height:1.6">Pri tréningu zaloguj post-workout shake rovno z hodiniek — ruky plné, telefón v šatni.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROADMAP -->
+    <div style="background:var(--surface);border-radius:var(--radius);border:0.5px solid var(--border);padding:20px 22px">
+      <div style="font-size:12px;font-weight:700;color:var(--text-hint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">Roadmap</div>
+      <div style="display:flex;gap:0;position:relative">
+        <div style="position:absolute;top:18px;left:18px;right:18px;height:2px;background:var(--border)"></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:14px;z-index:1;border:2px solid #fff">✓</div>
+          <div style="font-size:11px;font-weight:700;color:var(--green);text-align:center">V1</div>
+          <div style="font-size:10px;color:var(--text-hint);text-align:center;line-height:1.4">Tracker<br>& reminders</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--purple-light);display:flex;align-items:center;justify-content:center;font-size:14px;z-index:1;border:2px solid #fff">🤖</div>
+          <div style="font-size:11px;font-weight:700;color:var(--purple);text-align:center">V2</div>
+          <div style="font-size:10px;color:var(--text-hint);text-align:center;line-height:1.4">AI tréner<br>& odporúčania</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--amber-light);display:flex;align-items:center;justify-content:center;font-size:14px;z-index:1;border:2px solid #fff">⌚</div>
+          <div style="font-size:11px;font-weight:700;color:var(--amber);text-align:center">V3</div>
+          <div style="font-size:10px;color:var(--text-hint);text-align:center;line-height:1.4">Apple Watch<br>& wearables</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="height:80px"></div>
+
+<!-- LIGHTBOX -->
+<div class="lb-overlay" id="lb">
+  <button class="lb-close" onclick="lbClose()">&times;</button>
+  <button class="lb-nav lb-prev" onclick="lbMove(-1)">&#8249;</button>
+  <button class="lb-nav lb-next" onclick="lbMove(1)">&#8250;</button>
+  <div class="lb-img-wrap"><img id="lbImg" src="" alt=""></div>
+  <div class="lb-caption" id="lbCap"></div>
+  <div class="lb-counter" id="lbCnt"></div>
+</div>
+
+<script>
+/* ── APP TABLE ── */
+function selectApp(i){document.querySelectorAll('.app-card').forEach(function(c,j){c.classList.toggle('active',j===i)})}
+
+/* ── LIGHTBOX ── */
+var lbSlots=document.querySelectorAll('.screen-slot');
+var lbIdx=0;
+lbSlots.forEach(function(s,i){s.querySelector('.screen-img').addEventListener('click',function(){lbIdx=i;lbShow()})});
+function lbShow(){var s=lbSlots[lbIdx];document.getElementById('lbImg').src=s.querySelector('img').src;document.getElementById('lbCap').textContent=s.querySelector('.screen-label').textContent;document.getElementById('lbCnt').textContent=(lbIdx+1)+' / '+lbSlots.length;document.getElementById('lb').classList.add('open');document.body.style.overflow='hidden'}
+function lbClose(){document.getElementById('lb').classList.remove('open');document.body.style.overflow=''}
+function lbMove(d){lbIdx=(lbIdx+d+lbSlots.length)%lbSlots.length;lbShow()}
+document.getElementById('lb').addEventListener('click',function(e){if(e.target===this)lbClose()});
+document.addEventListener('keydown',function(e){if(!document.getElementById('lb').classList.contains('open'))return;if(e.key==='Escape')lbClose();if(e.key==='ArrowLeft')lbMove(-1);if(e.key==='ArrowRight')lbMove(1)});
+
+/* ── PHONE NAVIGATION ── */
+function goScreen(id){
+  document.querySelectorAll('.p-screen').forEach(function(s){s.classList.remove('active')});
+  var t=document.getElementById(id);
+  if(t)t.classList.add('active');
+  var qb=document.getElementById('qbSheet');
+  if(qb)qb.classList.remove('open');
+}
+
+/* ── TAB SWITCHER ── */
+function swTab(el,screenId){
+  var inner=el.parentElement;
+  inner.querySelectorAll('.t-tab').forEach(function(t){
+    t.classList.remove('active');
+    t.style.background='transparent';
+    t.style.color='#999';
+    t.style.boxShadow='none';
+  });
+  el.classList.add('active');
+  el.style.background='#fff';
+  el.style.color='#1a1a18';
+  el.style.boxShadow='0 1px 4px rgba(0,0,0,.13)';
+  goScreen(screenId);
+}
+
+/* ── CALENDAR ── */
+function buildCal(){
+  var strip=document.getElementById('calStrip');
+  if(!strip)return;
+  var days=['Ne','Po','Ut','St','Št','Pi','So'];
+  var today=new Date();
+  for(var i=-3;i<=3;i++){
+    var d=new Date(today);d.setDate(today.getDate()+i);
+    var div=document.createElement('div');
+    div.className='cal-day'+(i===0?' today':i<0?'':'');
+    div.innerHTML='<div class="cdn">'+days[d.getDay()]+'</div><div class="cdd">'+d.getDate()+'</div>'+(i<0&&i!==0?'<div class="cddot"></div>':'');
+    strip.appendChild(div);
+  }
+}
+buildCal();
+
+/* ── QUICK BUY ── */
+var qbQtyVal=1;
+function openQB(){document.getElementById('qbSheet').classList.add('open')}
+function closeQB(){document.getElementById('qbSheet').classList.remove('open')}
+function chQty(d){qbQtyVal=Math.max(1,qbQtyVal+d);document.getElementById('qbQty').textContent=qbQtyVal}
+
+/* ── ONBOARDING SELECTORS ── */
+function selOb(el,grp){el.parentElement.querySelectorAll('.ob-gbtn').forEach(function(b){b.classList.remove('sel')});el.classList.add('sel')}
+function selT(el){el.classList.toggle('sel')}
+function swRepT(el){el.parentElement.querySelectorAll('.rep-tab').forEach(function(t){t.classList.remove('active')});el.classList.add('active')}
+
+/* ── UC ACCORDION ── */
+function toggleUC(head){head.parentElement.classList.toggle('open')}
+</script>
+</body>
+</html>
