@@ -358,6 +358,7 @@ tbody tr:hover td{background:#FAFAF9}
     <a href="#case-studies" class="nav-link done"><span class="status-dot dot-done"></span>Case studies</a>
     <a href="#mockup" class="nav-link done"><span class="status-dot dot-done"></span>Mockup</a>
     <a href="#iterations" class="nav-link todo"><span class="status-dot dot-todo"></span>Ďalšie iterácie</a>
+    <a href="#app-compliance" class="nav-link done"><span class="status-dot dot-done"></span>App Store compliance</a>
   </div>
 </nav>
 
@@ -1001,6 +1002,198 @@ tbody tr:hover td{background:#FAFAF9}
     </div>
 
   </div>
+</div>
+
+<!-- ═══════════ 06 · APP STORE COMPLIANCE ═══════════ -->
+<div id="app-compliance" class="section">
+  <div class="section-label">06 · App Store Compliance</div>
+  <h2 class="section-title">Ako bezpečne komunikovať replenishment suplementov</h2>
+  <p class="section-desc">Analýza politík Google Play a App Store — ako posielať push notifikácie typu „dochádza ti proteín, objednaj novú dávku" bez rizika rejection alebo removal.</p>
+
+  <!-- VERDICT -->
+  <div style="background:var(--green-light);border-left:4px solid var(--green);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:16px 20px;margin-bottom:20px">
+    <div style="font-size:14px;font-weight:700;color:var(--green-dark);margin-bottom:4px">Verdikt: Replenishment push notifikácie sú bezpečné</div>
+    <div style="font-size:13px;color:var(--text-muted);line-height:1.7">iHerb, MyProtein aj Bodybuilding.com používajú presne tento pattern. Push notifikácia „Tvoj proteín dochádza → objednaj novú dávku" je štandardná e-commerce funkcia, nie health claim.</div>
+  </div>
+
+  <!-- KEY RULE -->
+  <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px">
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px">Kľúčové pravidlo</div>
+    <div style="font-size:13px;color:var(--text-muted);line-height:1.8">
+      Komunikuj o <strong style="color:var(--text)">produkte, množstve a cene</strong> — nie o zdravotných benefitoch. „Tvoj Just Whey dochádza za 5 dní" = bezpečné. „Proteín ti pomôže nabrať svaly" = rizikové. Platformy posudzujú <strong style="color:var(--text)">tvrdenia</strong>, nie produkty samotné.
+    </div>
+  </div>
+
+  <!-- PLATFORM COMPARISON -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+    <div style="background:#fff;border:0.5px solid var(--border);border-radius:var(--radius);padding:18px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="width:32px;height:32px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:16px">🍎</div>
+        <div style="font-size:14px;font-weight:700">Apple App Store</div>
+      </div>
+      <ul style="padding-left:16px;margin:0">
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:5px"><strong style="color:var(--text)">Guideline 5.3</strong> — Promo push vyžadujú explicitný opt-in (nestačí systémové povolenie)</li>
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:5px"><strong style="color:var(--text)">Guideline 3.1.5</strong> — Fyzické produkty cez externý payment, nie IAP</li>
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:5px"><strong style="color:var(--text)">Guideline 1.4</strong> — Žiadne zavádzajúce zdravotné tvrdenia</li>
+        <li style="font-size:12px;color:var(--text-muted)">Povinný in-app opt-out mechanizmus</li>
+      </ul>
+    </div>
+    <div style="background:#fff;border:0.5px solid var(--border);border-radius:var(--radius);padding:18px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="width:32px;height:32px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:16px">🤖</div>
+        <div style="font-size:14px;font-weight:700">Google Play</div>
+      </div>
+      <ul style="padding-left:16px;margin:0">
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:5px"><strong style="color:var(--text)">Health Apps Declaration</strong> — povinný formulár od 01/2026</li>
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:5px"><strong style="color:var(--text)">Spam Policy</strong> — Notifikácie musia súvisieť s core funkcionalitou</li>
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:5px"><strong style="color:var(--text)">Inappropriate Content</strong> — Zakázané suplementy s farmaceutickými ingredienciami</li>
+        <li style="font-size:12px;color:var(--text-muted)">V 2025 zablokoval 1.75M appiek, zabanoval 80K dev účtov</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- RISK MATRIX -->
+  <div style="font-size:14px;font-weight:700;margin-bottom:10px">Riziková matica — replenishment komunikácia</div>
+  <div style="overflow-x:auto;margin-bottom:20px">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px">
+      <thead>
+        <tr style="background:var(--surface)">
+          <th style="padding:10px 12px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-hint);border-bottom:2px solid var(--border)">Typ push notifikácie</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-hint);border-bottom:2px solid var(--border)">Riziko</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-hint);border-bottom:2px solid var(--border)">Poznámka</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">„Tvoj Just Whey dochádza za 5 dní — objednaj novú dávku"</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)"><span style="color:var(--green);font-weight:700">Žiadne</span></td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Štandardný e-commerce replenishment. iHerb to robí.</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">„Minulý mesiac si kúpil kreatin — je čas na ďalšie balenie?"</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)"><span style="color:var(--green);font-weight:700">Nízke</span></td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Purchase history reminder. Amazon pattern.</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">„Tvoja denná dávka vitamínu D je dnes nesplnená"</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)"><span style="color:var(--green);font-weight:700">Nízke</span></td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Tracker reminder — core funkcia appky.</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">„-20% na proteíny len dnes!"</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)"><span style="color:var(--green);font-weight:700">Nízke</span></td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Promo push — s opt-in je OK.</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">„Just Whey je opäť skladom"</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)"><span style="color:var(--green);font-weight:700">Žiadne</span></td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">User-requested alert. Best practice.</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">„Proteín ti pomôže nabrať svaly a schudnúť"</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)"><span style="color:#dc2626;font-weight:700">Vysoké</span></td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Health claim v notifikácii = riziko removal.</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">„Tento suplement lieči bolesti kĺbov"</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)"><span style="color:#dc2626;font-weight:700">Vysoké</span></td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Medical claim = okamžité rejection na oboch platformách.</td></tr>
+        <tr><td style="padding:10px 12px">„Lekár odporúča tento vitamín"</td><td style="padding:10px 12px"><span style="color:#dc2626;font-weight:700">Vysoké</span></td><td style="padding:10px 12px">Neschválené medical endorsement.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- REPLENISHMENT FLOW -->
+  <div style="font-size:14px;font-weight:700;margin-bottom:10px">Odporúčaný replenishment flow</div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px;padding:16px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius)">
+    <div style="padding:7px 12px;border-radius:6px;font-size:12px;font-weight:600;background:var(--green-light);color:var(--green-dark);border:1px solid var(--green-mid)">User kúpi suplement</div>
+    <div style="color:#ccc;font-size:16px">→</div>
+    <div style="padding:7px 12px;border-radius:6px;font-size:12px;font-weight:600;background:var(--green-light);color:var(--green-dark);border:1px solid var(--green-mid)">Tracker vypočíta dátum spotreby</div>
+    <div style="color:#ccc;font-size:16px">→</div>
+    <div style="padding:7px 12px;border-radius:6px;font-size:12px;font-weight:600;background:var(--amber-light);color:var(--amber);border:1px solid #fde68a">Push 5 dní pred: „Dochádza ti..."</div>
+    <div style="color:#ccc;font-size:16px">→</div>
+    <div style="padding:7px 12px;border-radius:6px;font-size:12px;font-weight:600;background:var(--green-light);color:var(--green-dark);border:1px solid var(--green-mid)">Deep link na PDP</div>
+    <div style="color:#ccc;font-size:16px">→</div>
+    <div style="padding:7px 12px;border-radius:6px;font-size:12px;font-weight:600;background:var(--green-light);color:var(--green-dark);border:1px solid var(--green-mid)">Nákup novej dávky</div>
+  </div>
+
+  <!-- DO / DON'T -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+    <div style="background:var(--green-light);border-radius:var(--radius-sm);padding:16px">
+      <div style="font-size:13px;font-weight:700;color:var(--green-dark);margin-bottom:8px">✓ Bezpečné push texty</div>
+      <ul style="padding-left:16px;margin:0">
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:4px">„Tvoj Just Whey vydrží ešte ~5 dní"</li>
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:4px">„Kreatin minulého mesiaca — objednať znova?"</li>
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:4px">„-15% na tvoj pravidelný proteín"</li>
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:4px">„Vitamin D3 je opäť skladom"</li>
+        <li style="font-size:12px;color:var(--text-muted)">„Dnes si ešte nevzal rannú dávku" (tracker)</li>
+      </ul>
+    </div>
+    <div style="background:#fef2f2;border-radius:var(--radius-sm);padding:16px">
+      <div style="font-size:13px;font-weight:700;color:#dc2626;margin-bottom:8px">✕ Zakázané formulácie</div>
+      <ul style="padding-left:16px;margin:0">
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:4px">„Proteín ti pomôže schudnúť"</li>
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:4px">„Tento suplement lieči/vylieči..."</li>
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:4px">„Klinicky overené účinky na..."</li>
+        <li style="font-size:12px;color:var(--text-muted);margin-bottom:4px">„Lekár odporúča tento vitamín"</li>
+        <li style="font-size:12px;color:var(--text-muted)">„Zaručene zvýši tvoj výkon o 20%"</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- IMPLEMENTATION REQUIREMENTS -->
+  <div style="font-size:14px;font-weight:700;margin-bottom:10px">Implementačné požiadavky</div>
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green-dark);flex-shrink:0">1</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:2px">Dvojúrovňový opt-in (iOS povinné)</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7">Systémové push povolenie + separátny in-app marketing consent. Bez tohto Apple appku zamietne.</div>
+      </div>
+    </div>
+
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green-dark);flex-shrink:0">2</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:2px">Health Apps Declaration (Google Play)</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7">Povinný formulár od januára 2026 pre každú appku s health-related obsahom.</div>
+      </div>
+    </div>
+
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green-dark);flex-shrink:0">3</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:2px">Disclaimer na PDP stránkach</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7">„Doplnok stravy. Nie je určený na diagnostiku, liečbu ani prevenciu chorôb." — tak ako to robí iHerb.</div>
+      </div>
+    </div>
+
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green-dark);flex-shrink:0">4</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:2px">Notification preferences center</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7">Granulárne nastavenia: transakčné / replenishment remindery / promo akcie / tracker remindery. Apple revieweri kontrolujú či existuje opt-out.</div>
+      </div>
+    </div>
+
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;display:flex;gap:12px;align-items:flex-start">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green-dark);flex-shrink:0">5</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:2px">Appku kategorizovať ako Shopping/E-commerce</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7">Nie Health & Medical — vyhneš sa prísnejšiemu review pipeline na oboch platformách.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION TYPES -->
+  <div style="font-size:14px;font-weight:700;margin-bottom:10px">Typy notifikácií a ich pravidlá</div>
+  <div style="overflow-x:auto;margin-bottom:20px">
+    <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:560px">
+      <thead>
+        <tr style="background:var(--surface)">
+          <th style="padding:10px 12px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;color:var(--text-hint);border-bottom:2px solid var(--border)">Typ</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;color:var(--text-hint);border-bottom:2px solid var(--border)">Príklad</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;color:var(--text-hint);border-bottom:2px solid var(--border)">Opt-in?</th>
+          <th style="padding:10px 12px;text-align:left;font-weight:700;font-size:11px;text-transform:uppercase;color:var(--text-hint);border-bottom:2px solid var(--border)">Max frekvencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04);font-weight:600">Transakčné</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Objednávka odoslaná / doručená</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Nie</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Event-based</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04);font-weight:600">Tracker reminder</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">„Ranná dávka: Vitamín D3 + Omega 3"</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Áno (tracker setup = opt-in)</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Podľa user nastavenia</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04);font-weight:600">Replenishment</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">„Tvoj proteín dochádza za 5 dní"</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Áno (marketing)</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Max 1x / produkt</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04);font-weight:600">Restock alert</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">„Just Whey je opäť skladom"</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Áno (user-requested)</td><td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04)">Event-based</td></tr>
+        <tr><td style="padding:10px 12px;font-weight:600">Promo / sale</td><td style="padding:10px 12px">„-20% na proteíny dnes"</td><td style="padding:10px 12px">Áno (marketing opt-in)</td><td style="padding:10px 12px">Max 2x/týždeň</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SOURCES -->
+  <div style="padding-top:16px;border-top:0.5px solid var(--border)">
+    <div style="font-size:11px;font-weight:700;color:var(--text-hint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Zdroje</div>
+    <div style="columns:2;column-gap:20px;font-size:11px;line-height:1.8">
+      <a href="https://developer.apple.com/app-store/review/guidelines/" style="display:block;color:var(--green);text-decoration:none">Apple App Store Review Guidelines</a>
+      <a href="https://support.google.com/googleplay/android-developer/answer/16679511" style="display:block;color:var(--green);text-decoration:none">Google Play — Health Content Policy</a>
+      <a href="https://support.google.com/googleplay/android-developer/answer/14738291" style="display:block;color:var(--green);text-decoration:none">Google Play — Health Apps Declaration</a>
+      <a href="https://support.google.com/googleplay/android-developer/answer/9899034" style="display:block;color:var(--green);text-decoration:none">Google Play — Spam Policy</a>
+      <a href="https://www.airship.com/blog/apple-push-notification-guidelines-update/" style="display:block;color:var(--green);text-decoration:none">Apple Push Notification Guidelines (Airship)</a>
+      <a href="https://support.google.com/googleplay/android-developer/answer/9878810" style="display:block;color:var(--green);text-decoration:none">Google Play — Inappropriate Content</a>
+    </div>
+  </div>
+
 </div>
 
 <div style="height:80px"></div>
